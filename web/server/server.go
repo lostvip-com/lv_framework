@@ -118,11 +118,16 @@ func NewHttpServer() *MyHttpServer {
 	port := lv_conf.Config().GetServerPort()
 	httpServer := &MyHttpServer{ServerName: lv_conf.Config().GetAppName()}
 	httpServer.HttpServer = &http.Server{
-		Addr:           "0.0.0.0:" + cast.ToString(port),
-		Handler:        InitGinRouter(contextPath),
-		ReadTimeout:    60 * time.Second,
-		WriteTimeout:   60 * time.Second,
-		MaxHeaderBytes: 1 << 20,
+		Addr:    "0.0.0.0:" + cast.ToString(port),
+		Handler: InitGinRouter(contextPath),
+	}
+	timeoutR := lv_conf.Config().GetValueStr("server.read-timeout")
+	if timeoutR != "" {
+		httpServer.HttpServer.ReadTimeout = cast.ToDuration(timeoutR)
+	}
+	timeoutW := lv_conf.Config().GetValueStr("server.write-timeout")
+	if timeoutW != "" {
+		httpServer.HttpServer.ReadTimeout = cast.ToDuration(timeoutW)
 	}
 	return httpServer
 }

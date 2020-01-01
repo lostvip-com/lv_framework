@@ -93,7 +93,7 @@ go get github.com/lostvip-com/lv_framework
 
 | 服务类型 | 说明 | 联系方式 |
 |---------|------|---------|
-| 社区版 | 免费使用，社区支持 | [GitHub Issues](https://github.com/lostvip-com) |
+| 社区版 | 免费使用，社区支持 | [GitHub Issues](https://github.com/lostvip-com/ruoyi-go/issues) |
 | 专业版 | 付费企业技术支持 | [联系我们](https://github.com/lostvip-com) |
 | 企业版 | 定制开发、企业培训 | [联系我们](https://github.com/lostvip-com) |
 
@@ -101,7 +101,7 @@ go get github.com/lostvip-com/lv_framework
 
 ## 项目链接
 
-- **GitHub**: https://github.com/lostvip-com
+- **GitHub**: https://github.com/lostvip-com/ruoyi-go
 - **官网**: https://lostvip.com
 - **微信公众号**: lostvip666
 - **QQ群**: 43862272
