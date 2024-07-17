@@ -3,8 +3,8 @@ package db
 import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/lv_framework/db/xorm"
-	"github.com/lv_framework/logme"
+	"github.com/lostvip-com/lv_framework/db/xorm"
+	"github.com/lostvip-com/lv_framework/logme"
 	_ "github.com/mattn/go-sqlite3"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"

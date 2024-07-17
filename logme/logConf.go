@@ -3,7 +3,7 @@ package logme
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/lv_framework/utils/lv_file"
+	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
