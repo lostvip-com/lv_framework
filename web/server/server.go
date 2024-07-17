@@ -9,7 +9,7 @@ import (
 	"github.com/lostvip-com/lv_framework/web/router"
 	"github.com/spf13/cast"
 	"html/template"
-	"lostvip.com/lv_global"
+	"lv_framework/lv_global"
 	//gintemplate "github.com/foolin/gin-template"
 	"github.com/gin-gonic/gin"
 	"log"

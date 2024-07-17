@@ -9,7 +9,7 @@ import (
 	"github.com/lostvip-com/lv_framework/logme"
 	"github.com/lostvip-com/lv_framework/utils/lv_sql"
 	"gorm.io/gorm"
-	"lostvip.com/lv_global"
+	"lv_framework/lv_global"
 	"strings"
 )
 

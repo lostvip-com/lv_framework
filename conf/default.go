@@ -7,7 +7,7 @@ import (
 	"github.com/lostvip-com/lv_framework/utils/lv_net"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
-	"lostvip.com/logme"
+	"lv_framework/logme"
 	"os"
 	"strings"
 )

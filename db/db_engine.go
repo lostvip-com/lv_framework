@@ -10,7 +10,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
-	"lostvip.com/lv_global"
+	"lv_framework/lv_global"
 	"strings"
 	"sync"
 	"xorm.io/core"

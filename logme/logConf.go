@@ -8,7 +8,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"log"
-	"lostvip.com/lv_global"
+	"lv_framework/lv_global"
 	"os"
 )
 

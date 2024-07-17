@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/spf13/cast"
-	"lostvip.com/lv_global"
+	"lv_framework/lv_global"
 	"time"
 )
 
