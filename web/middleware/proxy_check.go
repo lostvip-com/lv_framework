@@ -3,8 +3,8 @@ package middleware
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"lv_framework/lv_global"
-	"lv_framework/utils/lv_net"
+	"github.com/lostvip-com/lv_framework/lv_global"
+	"github.com/lostvip-com/lv_framework/utils/lv_net"
 	"strings"
 )
 

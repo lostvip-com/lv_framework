@@ -1,4 +1,4 @@
-module lv_framework
+module github.com/lostvip-com/lv_framework
 
 go 1.20
 

@@ -3,12 +3,12 @@ package logme
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/lostvip-com/lv_framework/lv_global"
 	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"log"
-	"lv_framework/lv_global"
 	"os"
 )
 

@@ -7,9 +7,9 @@ package namedsql
 import (
 	"database/sql"
 	"github.com/lostvip-com/lv_framework/logme"
+	"github.com/lostvip-com/lv_framework/lv_global"
 	"github.com/lostvip-com/lv_framework/utils/lv_sql"
 	"gorm.io/gorm"
-	"lv_framework/lv_global"
 	"strings"
 )
 
