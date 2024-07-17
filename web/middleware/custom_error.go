@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"lv_framework/logme"
-	"lv_framework/utils/lv_err"
-	"lv_framework/utils/lv_web"
-	"lv_framework/web/dto"
+	"github.com/lostvip-com/lv_framework/logme"
+	"github.com/lostvip-com/lv_framework/utils/lv_err"
+	"github.com/lostvip-com/lv_framework/utils/lv_web"
+	"github.com/lostvip-com/lv_framework/web/dto"
 	"net/http"
 	"strings"
 )
