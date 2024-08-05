@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"strings"
 	"sync"
@@ -97,7 +98,13 @@ func createGorm(driverName, url string) *gorm.DB {
 	} else {
 		dialector = sqlite.Open(url)
 	}
-	gormDB, err := gorm.Open(dialector, &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
+
+	showSql := lv_global.Config().GetBool("go.datasource.show-sql")
+	config := &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}} //表名用单数
+	if showSql {
+		config.Logger = logger.Default.LogMode(logger.Info)
+	}
+	gormDB, err := gorm.Open(dialector, config)
 	if err != nil {
 		panic("连接数据库失败" + err.Error())
 	}

@@ -200,7 +200,7 @@ func (e *ConfigDefault) IsDebug() string {
 
 func (e *ConfigDefault) GetAutoMigrate() string {
 	if e.autoMigrate == "" {
-		e.autoMigrate = e.GetValueStr("go.application.datasource.auto-migrate")
+		e.autoMigrate = e.GetValueStr("go.datasource.auto-migrate")
 	}
 	return e.autoMigrate
 }

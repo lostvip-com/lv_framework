@@ -25,3 +25,8 @@ func IsMap(data interface{}) bool {
 	t := reflect.TypeOf(data)
 	return t.Kind() == reflect.Map
 }
+
+func Map2Struct(sourceMap map[any]any, destPtr any) error {
+	err := copier.Copy(destPtr, sourceMap)
+	return err
+}

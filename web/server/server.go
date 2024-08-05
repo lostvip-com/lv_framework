@@ -46,9 +46,13 @@ func (mySvr *MyServer) Start() {
 	host := lv_global.Config().GetServerIP()
 	path := lv_global.Config().GetContextPath()
 	port := cast.ToString(lv_global.Config().GetServerPort())
+	cache := lv_global.Config().GetValueStr("go.cache")
 	fmt.Println("##############################################################")
 	fmt.Println("go.application.name: " + lv_global.Config().GetAppName())
-	fmt.Println("go.redis.host: " + lv_global.Config().GetValueStr("go.redis.host"))
+	fmt.Println("go.cache: " + cache)
+	if cache == "redis" {
+		fmt.Println("go.redis.host: " + lv_global.Config().GetValueStr("go.redis.host"))
+	}
 	fmt.Println("go.datasource.master: " + lv_global.Config().GetMaster())
 	//加载模板引擎
 	fmt.Println("http://localhost:" + port + strings.ReplaceAll(path, "//", "/"))
@@ -105,7 +109,7 @@ func InitGinRouter(contextPath string) *gin.Engine {
 		Root:      "template",
 		Extension: ".html",
 		Master:    "",
-		Partials:  []string{"header", "footer", "system/menu/icon"},
+		Partials:  lv_global.Config().GetPartials(), //[]string{"header", "footer", "system/menu/icon"}
 		Funcs:     template.FuncMap(lv_global.Config().GetFuncMap()),
 		CacheTpl:  lv_global.Config().IsCacheTpl(),
 	})

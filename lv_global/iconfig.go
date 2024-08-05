@@ -42,4 +42,5 @@ type IConfig interface {
 	LoadConf()
 	GetFuncMap() template.FuncMap
 	GetAutoMigrate() string
+	GetPartials() []string
 }

@@ -13,7 +13,6 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/lostvip-com/lv_framework/logme"
-	"github.com/lostvip-com/lv_framework/utils/lv_err"
 	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/lostvip-com/lv_framework/utils/lv_tpl"
 	"github.com/morrisxyang/xreflect"
@@ -67,9 +66,9 @@ func (e *LvBatis) GetSql(tagName string, params interface{}) (string, error) {
 	}
 	//动态解析
 	sql, err := lv_tpl.ParseTemplateStr(query, params)
-	lv_err.HasErrAndPanic(err)
-	if sql == "" {
-		panic(e.getTplFile() + " 可能存在错误：<p/>1.使用了参数对象中不存在的属性<p/>2.template语法错误")
+	if sql == "" || err != nil {
+		logme.Error(err)
+		panic(e.getTplFile() + " 可能存在错误：<p/>1.使用了参数对象中不存在的属性<p/>2.template语法错误！")
 	}
 	e.CurrBaseSql = sql //缓存当前正在执行的分页sql
 	return sql, err
