@@ -2,7 +2,6 @@ package conf
 
 import (
 	"fmt"
-	"github.com/lostvip-com/lv_framework/logme"
 	"github.com/lostvip-com/lv_framework/utils/lv_conv"
 	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/lostvip-com/lv_framework/utils/lv_net"
@@ -10,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 	"os"
 	"strings"
+	"text/template"
 )
 
 type ConfigDefault struct {
@@ -20,6 +20,15 @@ type ConfigDefault struct {
 	contextPath string
 	debug       string
 	autoMigrate string
+}
+
+func (e *ConfigDefault) IsProxyEnabled() bool {
+	return false
+}
+
+func (e *ConfigDefault) GetFuncMap() template.FuncMap {
+	mp := template.FuncMap{}
+	return mp
 }
 
 func (e *ConfigDefault) IsCacheTpl() bool {
@@ -45,7 +54,7 @@ func (e *ConfigDefault) GetValueStrDefault(key string, defaultVal string) string
 func (e *ConfigDefault) GetValueStr(key string) string {
 
 	if e.vipperCfg == nil {
-		e.vipperCfg = e.LoadConf()
+		e.LoadConf()
 	}
 	val := cast.ToString(e.vipperCfg.Get(key))
 	if strings.HasPrefix(val, "$") { //存在动态表达式
@@ -69,7 +78,7 @@ func (e *ConfigDefault) GetValueStr(key string) string {
 
 func (e *ConfigDefault) GetBool(key string) bool {
 	if e.vipperCfg == nil {
-		e.vipperCfg = e.LoadConf()
+		e.LoadConf()
 	}
 	val := cast.ToString(e.vipperCfg.Get(key))
 	val = e.parseVal(val)
@@ -96,7 +105,7 @@ func (e *ConfigDefault) parseVal(val string) string {
 	return val
 }
 
-func (e *ConfigDefault) LoadConf() *viper.Viper {
+func (e *ConfigDefault) LoadConf() {
 	e.vipperCfg = viper.New()
 	if lv_file.IsFileExist("bootstrap.yml") || lv_file.IsFileExist("bootstrap.yaml") {
 		e.vipperCfg.SetConfigName("bootstrap")
@@ -104,7 +113,7 @@ func (e *ConfigDefault) LoadConf() *viper.Viper {
 		e.vipperCfg.AddConfigPath("./")
 		e.vipperCfg.ReadInConfig()
 	} else {
-		logme.Warn("未找到配置文件 bootstrap.yml 将使用默认配置！！！")
+		fmt.Println("未找到配置文件 bootstrap.yml 将使用默认配置！！！")
 	}
 	//加载第二个配置文件
 	if lv_file.IsFileExist("application.yml") || lv_file.IsFileExist("application.yaml") {
@@ -113,7 +122,7 @@ func (e *ConfigDefault) LoadConf() *viper.Viper {
 		e.vipperCfg.AddConfigPath("./")
 		e.vipperCfg.MergeInConfig()
 	} else {
-		logme.Warn("未找到配置文件 application.yml 将使用默认配置！！！")
+		fmt.Println("未找到配置文件 application.yml 将使用默认配置！！！")
 	}
 	if e.vipperCfg.GetBool("go.proxy.enable") == true {
 		e.proxyEnable = true
@@ -122,8 +131,6 @@ func (e *ConfigDefault) LoadConf() *viper.Viper {
 		fmt.Println("!!！！！！！！！！！！！！!!! porxy feature is disabled ！！！！！！！！！！！！！！！！！！！！！！！")
 		e.proxyEnable = false
 	}
-
-	return e.vipperCfg
 }
 
 /**
@@ -267,3 +274,7 @@ func (e *ConfigDefault) LoadProxyInfo() *map[string]string {
 	fmt.Println("######### 加载代理配置信息 end #############")
 	return &e.proxyMap
 }
+
+func (e *ConfigDefault) GetPartials() []string {
+	return []string{}
+} //

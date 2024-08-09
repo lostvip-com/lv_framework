@@ -2,8 +2,8 @@ package lv_global
 
 import (
 	"fmt"
-	"github.com/alecthomas/template"
 	"github.com/spf13/viper"
+	"html/template"
 )
 
 var iconfig IConfig

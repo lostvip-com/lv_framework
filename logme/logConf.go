@@ -2,9 +2,11 @@ package logme
 
 import (
 	"fmt"
+	"github.com/lostvip-com/lv_framework/conf"
 	"github.com/lostvip-com/lv_framework/lv_global"
 	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"os"
@@ -20,6 +22,10 @@ func GetLog() *logrus.Logger {
 }
 
 func InitLog(fileName string) {
+	if lv_global.Config() == nil {
+		cfg := new(conf.ConfigDefault)
+		lv_global.RegisterCfg(cfg)
+	}
 	pwd, err := os.Getwd()
 	if err != nil {
 		panic(err)
@@ -45,12 +51,24 @@ func InitLog(fileName string) {
 		lv_global.IsDebug = false
 		fmt.Println("============ release模式，输出日志json到文件============")
 	}
+	maxSize := lv_global.Config().GetValueStr("go.log.max-size")
+	maxBackups := lv_global.Config().GetValueStr("go.log.max-backups")
+	maxAge := lv_global.Config().GetValueStr("go.log.max-age")
+	if maxSize == "" {
+		maxSize = "10"
+	}
+	if maxBackups == "" {
+		maxBackups = "5"
+	}
+	if maxAge == "" {
+		maxAge = "30"
+	}
 	fileLog := &lumberjack.Logger{
 		Filename:   pwd + "/" + fileName,
-		MaxSize:    500,  // 日志文件最大 size, 单位是 MB
-		MaxBackups: 3,    // 最大过期日志保留的个数
-		MaxAge:     28,   //保留过期文件的最大时间间隔,单位是天
-		Compress:   true, // disabled by default,是否需要压缩滚动日志, 使用的 gzip 压缩
+		MaxSize:    cast.ToInt(maxSize),    // 日志文件最大 size, 单位是 MB
+		MaxBackups: cast.ToInt(maxBackups), // 最大过期日志保留的个数
+		MaxAge:     cast.ToInt(maxAge),     //保留过期文件的最大时间间隔,单位是天
+		Compress:   true,                   // disabled by default,是否需要压缩滚动日志, 使用的 gzip 压缩
 	}
 	var writers []io.Writer
 	output := lv_global.Config().GetValueStr("go.log.output")
