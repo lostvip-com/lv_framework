@@ -45,6 +45,7 @@ func UpdateTimeZone(timeZone string) (err error) {
 	return err
 }
 
+// GetCurrTimeStr  自定义格式
 func GetCurrTimeStr(fmt string) string {
 	return time.Now().Local().Format(fmt)
 }
