@@ -2,20 +2,20 @@ package lv_web
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/lostvip-com/lv_framework/web/dto"
+	"github.com/lostvip-com/lv_framework/web/lv_dto"
 	"net/http"
 )
 
 // 通用api响应
 type TableResp struct {
-	t *dto.TableDataInfo
+	t *lv_dto.TableDataInfo
 	c *gin.Context
 }
 
 // 返回一个成功的消息体
 func BuildTable(c *gin.Context, total any, rows interface{}) *TableResp {
-	msg := dto.TableDataInfo{
-		Code:  dto.SUCCESS,
+	msg := lv_dto.TableDataInfo{
+		Code:  lv_dto.SUCCESS,
 		Msg:   "操作成功",
 		Total: total,
 		Rows:  rows,

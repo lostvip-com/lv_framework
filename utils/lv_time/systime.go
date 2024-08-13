@@ -45,6 +45,10 @@ func UpdateTimeZone(timeZone string) (err error) {
 	return err
 }
 
+func GetCurrTimeStr(fmt string) string {
+	return time.Now().Local().Format(fmt)
+}
+
 func GetCurrentTimeStr() string {
 	return time.Now().Local().Format("2006-01-02 15:04:05")
 }

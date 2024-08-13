@@ -3,19 +3,19 @@ package lv_web
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/lostvip-com/lv_framework/web/dto"
+	"github.com/lostvip-com/lv_framework/web/lv_dto"
 	"net/http"
 )
 
 // 通用api响应
 type ApiResp struct {
-	r *dto.CommonRes
+	r *lv_dto.CommonRes
 	c *gin.Context
 }
 
 // 返回一个成功的消息体
 func SucessData(c *gin.Context, data interface{}) {
-	msg := dto.CommonRes{
+	msg := lv_dto.CommonRes{
 		Code: 200,
 		Data: data,
 		Msg:  "操作成功",
@@ -26,7 +26,7 @@ func SucessData(c *gin.Context, data interface{}) {
 
 // 返回一个成功的消息体
 func SucessDataMsg(c *gin.Context, data, msg string) {
-	c.JSON(http.StatusOK, dto.CommonRes{
+	c.JSON(http.StatusOK, lv_dto.CommonRes{
 		Code: 200,
 		Data: data,
 		Msg:  msg,
@@ -36,7 +36,7 @@ func SucessDataMsg(c *gin.Context, data, msg string) {
 
 // 返回一个成功的消息体
 func SucessPage(c *gin.Context, rows any, total int64) {
-	msg := dto.TableDataInfo{
+	msg := lv_dto.TableDataInfo{
 		Code:  200,
 		Rows:  rows,
 		Total: total,
@@ -48,7 +48,7 @@ func SucessPage(c *gin.Context, rows any, total int64) {
 
 // 返回一个成功的消息体
 func Fail(c *gin.Context, msg string) {
-	ret := dto.CommonRes{
+	ret := lv_dto.CommonRes{
 		Code: 500,
 		Msg:  msg,
 	}
@@ -58,9 +58,9 @@ func Fail(c *gin.Context, msg string) {
 
 // 返回一个成功的消息体
 func SucessResp(c *gin.Context) *ApiResp {
-	msg := dto.CommonRes{
+	msg := lv_dto.CommonRes{
 		Code:  200,
-		Btype: dto.Buniss_Other,
+		Btype: lv_dto.Buniss_Other,
 		Msg:   "操作成功",
 	}
 	var a = ApiResp{
@@ -72,9 +72,9 @@ func SucessResp(c *gin.Context) *ApiResp {
 
 // 返回一个错误的消息体
 func ErrorResp(c *gin.Context) *ApiResp {
-	msg := dto.CommonRes{
+	msg := lv_dto.CommonRes{
 		Code:  500,
-		Btype: dto.Buniss_Other,
+		Btype: lv_dto.Buniss_Other,
 		Msg:   "操作失败",
 	}
 	var a = ApiResp{
@@ -86,9 +86,9 @@ func ErrorResp(c *gin.Context) *ApiResp {
 
 // 返回一个拒绝访问的消息体
 func ForbiddenResp(c *gin.Context) *ApiResp {
-	msg := dto.CommonRes{
+	msg := lv_dto.CommonRes{
 		Code:  403,
-		Btype: dto.Buniss_Other,
+		Btype: lv_dto.Buniss_Other,
 		Msg:   "无操作权限",
 	}
 	var a = ApiResp{
@@ -117,7 +117,7 @@ func (resp *ApiResp) SetData(data interface{}) *ApiResp {
 }
 
 // 设置消息体的业务类型
-func (resp *ApiResp) SetBtype(btype dto.BunissType) *ApiResp {
+func (resp *ApiResp) SetBtype(btype lv_dto.BunissType) *ApiResp {
 	resp.r.Btype = btype
 	return resp
 }

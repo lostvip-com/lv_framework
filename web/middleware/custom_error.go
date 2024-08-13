@@ -5,7 +5,7 @@ import (
 	"github.com/lostvip-com/lv_framework/logme"
 	"github.com/lostvip-com/lv_framework/utils/lv_err"
 	"github.com/lostvip-com/lv_framework/utils/lv_web"
-	"github.com/lostvip-com/lv_framework/web/dto"
+	"github.com/lostvip-com/lv_framework/web/lv_dto"
 	"net/http"
 	"strings"
 )
@@ -23,7 +23,7 @@ func RecoverError(c *gin.Context) {
 				} else {
 					lv_web.Err(c, errTypeObj)
 				}
-			case dto.Resp: //封装过的
+			case lv_dto.Resp: //封装过的
 				c.AbortWithStatusJSON(http.StatusOK, errTypeObj)
 				lv_web.ErrResp(c, errTypeObj)
 			case error: // 原始的错误

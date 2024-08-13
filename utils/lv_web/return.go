@@ -2,7 +2,7 @@ package lv_web
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/lostvip-com/lv_framework/web/dto"
+	"github.com/lostvip-com/lv_framework/web/lv_dto"
 	"net/http"
 )
 
@@ -55,12 +55,12 @@ func Error(c *gin.Context, err error) {
 	}
 	Err(c, msg)
 }
-func ErrResp(c *gin.Context, res dto.Resp) {
+func ErrResp(c *gin.Context, res lv_dto.Resp) {
 	c.AbortWithStatusJSON(http.StatusOK, res)
 }
 
 // 分页数据处理 ， 自动翻译 Tag locale标记的字段
-func PageOK(c *gin.Context, result dto.RespPage) {
+func PageOK(c *gin.Context, result lv_dto.RespPage) {
 	c.AbortWithStatusJSON(http.StatusOK, result)
 }
 
