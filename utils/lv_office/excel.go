@@ -178,7 +178,10 @@ func Write2Xls(filePath string, sheetName string, heads []string, listRows [][]s
 // WriteMap2Xls 追加excell，由于map无序，必须通过数组传title以保证标题次序
 // header := []string{"title", "href", "content"}
 // title := map[string]string{"title": "标题", "href": "链接", "content": "内容"}
-func WriteMap2Xls(filePath string, sheetName string, heads []string, listRows []map[string]string, addHeader bool) error {
+func WriteMap2Xls(filePath string, sheetName string, heads []string, listRows []map[string]string) error {
+	if heads == nil || len(heads) <= 0 {
+		panic("标题顺序依赖header，不允许为空!!")
+	}
 	var fileXls *xlsx.File
 	if lv_file.IsFileExist(filePath) {
 		fileXls, err = xlsx.OpenFile(filePath)
@@ -196,11 +199,9 @@ func WriteMap2Xls(filePath string, sheetName string, heads []string, listRows []
 		}
 	}
 	// 头部写入
-	if heads != nil && addHeader {
-		row := sheet.AddRow()
-		for _, headV := range heads {
-			row.AddCell().Value = headV
-		}
+	row := sheet.AddRow()
+	for _, headV := range heads {
+		row.AddCell().Value = headV
 	}
 	// 设置单元格样式
 	//sheet.SetColWidth(5, 5, 60) // 设置单元格宽度 0-A 1-B 2-C
