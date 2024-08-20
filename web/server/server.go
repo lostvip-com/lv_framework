@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/lostvip-com/lv_framework/logme"
 	"github.com/lostvip-com/lv_framework/lv_global"
+	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/lostvip-com/lv_framework/web/gintemplate"
 	"github.com/lostvip-com/lv_framework/web/middleware"
 	"github.com/lostvip-com/lv_framework/web/router"
@@ -68,7 +68,7 @@ func (mySvr *MyServer) ShutDown() {
 
 // 创建服务
 func New(addr string) *MyServer {
-	gin.DefaultWriter = logme.GetLog().Out
+	gin.DefaultWriter = lv_log.GetLog().Out
 	contextPath := lv_global.Config().GetContextPath()
 	var s MyServer
 	s.WriteTimeout = 60 * time.Second
@@ -97,7 +97,7 @@ func InitGinRouter(contextPath string) *gin.Engine {
 	// web 页面
 	/////////////////////////////////////////////////////////////////////////////////
 	routerBase := engine.Group(contextPath)
-	//routerBase.GET("/swagger/*any", gs.DisablingWrapHandler(swaggerFiles.Handler, conf.KEY_SWAGGER_OFF))
+	//routerBase.GET("/swagger/*any", gs.DisablingWrapHandler(swaggerFiles.Handler, lv_conf.KEY_SWAGGER_OFF))
 	tmp, _ := os.Getwd()
 	staticPath := tmp + "/static"
 	fmt.Println("设置静态目录：" + staticPath)

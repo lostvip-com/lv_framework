@@ -18,7 +18,7 @@ require (
 	github.com/tealeg/xlsx v1.0.5
 	github.com/ziutek/mymysql v1.5.4
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	//lvbatis
+	//lv_batis
 	gorm.io/driver/mysql v1.4.6
 	gorm.io/gorm v1.25.7
 	xorm.io/builder v0.3.13

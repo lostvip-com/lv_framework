@@ -1,7 +1,7 @@
 package lv_office
 
 import (
-	"github.com/lostvip-com/lv_framework/logme"
+	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/tealeg/xlsx"
 	"log"
@@ -140,7 +140,7 @@ func Write2Xls(filePath string, sheetName string, heads []string, listRows [][]s
 	} else {
 		err = CreateFilePath(filePath)
 		if err != nil {
-			logme.Error(err.Error())
+			lv_log.Error(err.Error())
 			return err
 		}
 		fileXls = xlsx.NewFile()
@@ -189,7 +189,7 @@ func WriteMap2Xls(filePath string, sheetName string, heads []string, listRows []
 	} else {
 		err = CreateFilePath(filePath)
 		if err != nil {
-			logme.Error(err.Error())
+			lv_log.Error(err.Error())
 			return err
 		}
 		fileXls = xlsx.NewFile()
