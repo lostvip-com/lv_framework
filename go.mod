@@ -1,4 +1,4 @@
-module github.com/lostvip-com/lv_framework
+module github.com/lostvip-com/lv_framework/v2
 
 go 1.20
 
@@ -22,7 +22,6 @@ require (
 	gorm.io/driver/mysql v1.4.6
 	gorm.io/gorm v1.25.7
 	xorm.io/builder v0.3.13
-	xorm.io/core v0.7.3
 )
 
 require (
