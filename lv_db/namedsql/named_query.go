@@ -103,6 +103,7 @@ func checkAndExtractMap(value interface{}) (map[string]any, bool) {
 	return nil, false
 }
 
+// ListMapAny params可是是strtuc指针或map,isCamel key是否按驼峰式命名
 func ListMapAny(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[string]any, error) {
 	var rows *sql.Rows
 	var err error
@@ -181,13 +182,14 @@ func ListMapAny(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[
 	return &results, err
 }
 
-/**
- *  注意：
- *  如果是map类型，只能是值类型，不能传地址 ！！！！！！！！！
- *  paramsValues 参数如果是struct类型，可以是指针也可以是值
- *
- */
+// ListMap sql查询返回map isCamel key是否按驼峰式命名
+// Deprecated: 不再使用
 func ListMap(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[string]string, error) {
+	return ListMapStr(db, sqlQuery, params, isCamel)
+}
+
+// ListMapStr 所有数据转为字符串格式返回，params可是是strtuc指针或map,isCamel key是否按驼峰式命名
+func ListMapStr(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[string]string, error) {
 	var rows *sql.Rows
 	var err error
 	if lv_global.IsDebug {
