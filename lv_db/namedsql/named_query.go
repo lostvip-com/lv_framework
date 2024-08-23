@@ -9,6 +9,7 @@ import (
 	"github.com/lostvip-com/lv_framework/lv_global"
 	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/lostvip-com/lv_framework/utils/lv_sql"
+	"github.com/spf13/cast"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -100,6 +101,84 @@ func checkAndExtractMap(value interface{}) (map[string]any, bool) {
 		return *ptr, true
 	}
 	return nil, false
+}
+
+func ListMapAny(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[string]any, error) {
+	var rows *sql.Rows
+	var err error
+	if lv_global.IsDebug {
+		db = db.Debug()
+	}
+	if strings.Contains(sqlQuery, "@") {
+		kvMap, isMap := checkAndExtractMap(params)
+		if isMap {
+			params = kvMap
+		}
+		rows, err = db.Raw(sqlQuery, params).Rows()
+	} else {
+		rows, err = db.Raw(sqlQuery).Rows()
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	cols, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+	// 获取列的类型信息
+	types, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	// 创建一个切片来存储每行的数据
+	var results []map[string]any
+
+	// 遍历每一行
+	for rows.Next() {
+		rowData := make(map[string]any)
+		values := make([]interface{}, len(cols))
+		valuePtrs := make([]interface{}, len(cols))
+		// 为每列创建一个 interface{} 类型的指针
+		for i := range values {
+			valuePtrs[i] = &values[i]
+		}
+		// 扫描当前行的数据
+		if err := rows.Scan(valuePtrs...); err != nil {
+			return nil, err
+		}
+		// 根据列的类型将值转换为更具体的 Go 类型
+		for i, val := range values {
+			key := lv_sql.ToCamel(cols[i])
+			if val == nil {
+				// 处理 NULL 值
+				rowData[key] = nil
+				continue
+			}
+
+			colType := types[i].DatabaseTypeName()
+			switch colType {
+			case "VARCHAR", "TEXT":
+				rowData[key] = cast.ToString(val)
+			case "INT", "INTEGER":
+				rowData[key] = cast.ToInt(val)
+			case "BIGINT":
+				rowData[key] = cast.ToInt64(val)
+			case "FLOAT", "DOUBLE":
+				rowData[key] = cast.ToFloat64(val)
+			case "DATETIME":
+				rowData[key] = cast.ToString(val)[:19]
+			case "DATE":
+				rowData[key] = cast.ToString(val)[:10]
+			default:
+				// 其他类型，直接存储 interface{}
+				rowData[key] = cast.ToString(val)
+			}
+		}
+		// 将处理好的行数据添加到结果切片中
+		results = append(results, rowData)
+	}
+	return &results, err
 }
 
 /**
