@@ -16,7 +16,7 @@ var log *logrus.Logger
 
 func GetLog() *logrus.Logger {
 	if log == nil {
-		InitLog("app.log")
+		InitLog("boot.log")
 	}
 	return log
 }
