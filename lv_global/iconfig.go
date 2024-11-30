@@ -44,4 +44,5 @@ type IConfig interface {
 	GetAutoMigrate() string // 是否自动生成表结构
 	GetPartials() []string  // 需要include的页面
 	GetLayoutPage() string  //全局布局页
+	GetThemePath() string
 }

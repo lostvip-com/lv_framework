@@ -280,5 +280,8 @@ func (e *ConfigDefault) GetPartials() []string {
 } //
 
 func (e *ConfigDefault) GetLayoutPage() string {
-	return "" // 如： template/layout/master.html
+	return e.GetThemePath() + "/layouts/master.html"
+} //
+func (e *ConfigDefault) GetThemePath() string {
+	return "theme/default" // 如： template/layout/master.html
 } //

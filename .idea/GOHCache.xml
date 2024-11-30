@@ -122,6 +122,13 @@
             </set>
           </value>
         </entry>
+        <entry key="MyConfig">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/../../../1-go/lv-cms/lv-cms/cms/internal/common/myconf/MyConfig.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="MyServer">
           <value>
             <set>
@@ -259,6 +266,18 @@
     </option>
     <option name="scannedPathMapping">
       <map>
+        <entry key="file://$PROJECT_DIR$/../../../1-go/lv-cms/lv-cms/cms/internal/common/myconf/MyConfig.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732944070330" />
+              <option name="schema">
+                <list>
+                  <option value="MyConfig" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/lv_cache/ICache.go">
           <value>
             <ScannedPath>
@@ -300,7 +319,7 @@
         <entry key="file://$PROJECT_DIR$/lv_conf/default.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1732943521365" />
+              <option name="lastModified" value="1732953679040" />
               <option name="schema">
                 <list>
                   <option value="ConfigDefault" />
@@ -393,7 +412,7 @@
         <entry key="file://$PROJECT_DIR$/lv_global/iconfig.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1732943398528" />
+              <option name="lastModified" value="1732953577170" />
             </ScannedPath>
           </value>
         </entry>
@@ -926,6 +945,7 @@
         <entry key="jwt_claims" value="JWTClaims" />
         <entry key="lv_batis" value="LvBatis" />
         <entry key="my_claims" value="MyClaims" />
+        <entry key="my_config" value="MyConfig" />
         <entry key="my_server" value="MyServer" />
         <entry key="page_req" value="PageReq" />
         <entry key="paging" value="Paging" />
