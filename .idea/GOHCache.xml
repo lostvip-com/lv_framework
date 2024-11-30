@@ -1,0 +1,951 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GoORMHelperCache">
+    <option name="schemaMapping">
+      <map>
+        <entry key="CaptchaRes">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/lv_dto/common.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="CommonRes">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/lv_dto/common.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="ConfigDefault">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/lv_conf/default.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="DbConn">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/lv_db/lv_drivers/mysql_drive.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="Delims">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/gintemplate/template.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="DetailReq">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/lv_dto/common.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="EditReq">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/lv_dto/common.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="GeneralDelDto">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/utils/lv_sql/search.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="GeneralGetDto">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/utils/lv_sql/search.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="GenericCRUD">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/lv_db/lv_dao/GenericCRUD.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="GormCondition">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/utils/lv_sql/condition.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="GormJoin">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/utils/lv_sql/condition.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="GormPublic">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/utils/lv_sql/condition.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="IdsReq">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/lv_dto/common.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="JWTClaims">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/utils/lv_net/JWTClaims.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="LvBatis">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/lv_db/lv_batis/lvbatis.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="MyClaims">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/utils/lv_secret/token.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="MyServer">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/server/server.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="PageReq">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/lv_dto/PageReq.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="Paging">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/lv_dto/paging.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="RamCacheClient">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/lv_cache/lv_ram/map.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="RedisClient">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/lv_cache/lv_redis/redis.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="ReplaceHelper">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/utils/lv_file/file.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="Resp">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/lv_dto/Resp.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="RespPage">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/lv_dto/RespPage.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="Scanner">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/lv_db/lv_batis/scanner.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="TableDataInfo">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/lv_dto/common.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="TemplateConfig">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/gintemplate/template.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="TemplateEngine">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/gintemplate/template.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="TemplateRender">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/gintemplate/template.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="Token">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/utils/lv_secret/token.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="Ztree">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/lv_dto/common.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="dbEngine">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/lv_db/db_engine.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="resolveSearchTag">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/utils/lv_sql/condition.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="router">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/router/router.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="routerGroup">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/web/router/router.go" />
+            </set>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="scannedPathMapping">
+      <map>
+        <entry key="file://$PROJECT_DIR$/lv_cache/ICache.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885566" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_cache/lv_ram/map.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885567" />
+              <option name="schema">
+                <list>
+                  <option value="RamCacheClient" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_cache/lv_ram/map_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885567" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_cache/lv_redis/redis.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885567" />
+              <option name="schema">
+                <list>
+                  <option value="RedisClient" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_conf/default.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732943521365" />
+              <option name="schema">
+                <list>
+                  <option value="ConfigDefault" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_db/db_engine.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885568" />
+              <option name="schema">
+                <list>
+                  <option value="dbEngine" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_db/lv_batis/lvbatis.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885569" />
+              <option name="schema">
+                <list>
+                  <option value="LvBatis" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_db/lv_batis/scanner.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885569" />
+              <option name="schema">
+                <list>
+                  <option value="Scanner" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_db/lv_dao/GenericCRUD.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885569" />
+              <option name="schema">
+                <list>
+                  <option value="GenericCRUD" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_db/lv_dao/query.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885569" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_db/lv_drivers/mysql_drive.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885570" />
+              <option name="schema">
+                <list>
+                  <option value="DbConn" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_db/namedsql/named_query.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885570" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_global/global.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885571" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_global/iconfig.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732943398528" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/lv_log/logConf.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885571" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_conv/bytes.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885572" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_conv/convert.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885572" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_conv/gconv_unsafe.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885572" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_conv/json_convert.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885572" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_conv/transcode.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885573" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_conv/utils_array.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885573" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_db/ColumnUtil.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885573" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_err/err_check.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885573" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_err/stack_trace.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885574" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_file/dir_file.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885574" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_file/file.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885574" />
+              <option name="schema">
+                <list>
+                  <option value="ReplaceHelper" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_gen/random.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885575" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_logic/IfTrue.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885575" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_logic/empty.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885575" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_logic/utils_str.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885576" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_net/JWTClaims.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885576" />
+              <option name="schema">
+                <list>
+                  <option value="JWTClaims" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_net/http_client_form.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885576" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_net/http_client_json.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885577" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_net/http_proxy.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885577" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_net/http_server_form.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885577" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_net/ip.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885577" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_net/iptocity.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885577" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_net/iptocity_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885578" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_net/localip.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885578" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_net/until.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885578" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_office/XlsReadUtil.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885578" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_office/excel.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885579" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_os/process.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885579" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_reflect/LocaleUtil.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885579" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_reflect/data_copy.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885579" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_reflect/i18n.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885579" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_reflect/method_name.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885580" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_secret/PKCS5.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885580" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_secret/aes.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885580" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_secret/base64.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885580" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_secret/gmd5.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885581" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_secret/md5.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885581" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_secret/rsa.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885581" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_secret/sha.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885581" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_secret/token.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885581" />
+              <option name="schema">
+                <list>
+                  <option value="MyClaims" />
+                  <option value="Token" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_sql/column_util.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885582" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_sql/condition.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885582" />
+              <option name="schema">
+                <list>
+                  <option value="GormCondition" />
+                  <option value="GormPublic" />
+                  <option value="GormJoin" />
+                  <option value="resolveSearchTag" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_sql/query.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885582" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_sql/query_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885582" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_sql/search.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885583" />
+              <option name="schema">
+                <list>
+                  <option value="GeneralDelDto" />
+                  <option value="GeneralGetDto" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_time/systime.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885583" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_time/time_utils.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885583" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/utils/lv_tpl/template.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885584" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/gintemplate/template.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885584" />
+              <option name="schema">
+                <list>
+                  <option value="TemplateEngine" />
+                  <option value="TemplateRender" />
+                  <option value="TemplateConfig" />
+                  <option value="Delims" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/lv_dto/PageReq.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885585" />
+              <option name="schema">
+                <list>
+                  <option value="PageReq" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/lv_dto/Resp.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885585" />
+              <option name="schema">
+                <list>
+                  <option value="Resp" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/lv_dto/RespPage.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885585" />
+              <option name="schema">
+                <list>
+                  <option value="RespPage" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/lv_dto/common.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885585" />
+              <option name="schema">
+                <list>
+                  <option value="CommonRes" />
+                  <option value="CaptchaRes" />
+                  <option value="TableDataInfo" />
+                  <option value="Ztree" />
+                  <option value="IdsReq" />
+                  <option value="DetailReq" />
+                  <option value="EditReq" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/lv_dto/paging.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885586" />
+              <option name="schema">
+                <list>
+                  <option value="Paging" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/middleware/custom_error.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885586" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/middleware/header.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885586" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/middleware/logger_request.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885587" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/middleware/proxy_check.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885587" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/router/router.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732942885588" />
+              <option name="schema">
+                <list>
+                  <option value="router" />
+                  <option value="routerGroup" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/web/server/server.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1732943470011" />
+              <option name="schema">
+                <list>
+                  <option value="MyServer" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="tableStructMapping">
+      <map>
+        <entry key="captcha_res" value="CaptchaRes" />
+        <entry key="common_res" value="CommonRes" />
+        <entry key="config_default" value="ConfigDefault" />
+        <entry key="db_conn" value="DbConn" />
+        <entry key="db_engine" value="dbEngine" />
+        <entry key="delims" value="Delims" />
+        <entry key="detail_req" value="DetailReq" />
+        <entry key="edit_req" value="EditReq" />
+        <entry key="general_del_dto" value="GeneralDelDto" />
+        <entry key="general_get_dto" value="GeneralGetDto" />
+        <entry key="generic_crud" value="GenericCRUD" />
+        <entry key="gorm_condition" value="GormCondition" />
+        <entry key="gorm_join" value="GormJoin" />
+        <entry key="gorm_public" value="GormPublic" />
+        <entry key="ids_req" value="IdsReq" />
+        <entry key="jwt_claims" value="JWTClaims" />
+        <entry key="lv_batis" value="LvBatis" />
+        <entry key="my_claims" value="MyClaims" />
+        <entry key="my_server" value="MyServer" />
+        <entry key="page_req" value="PageReq" />
+        <entry key="paging" value="Paging" />
+        <entry key="ram_cache_client" value="RamCacheClient" />
+        <entry key="redis_client" value="RedisClient" />
+        <entry key="replace_helper" value="ReplaceHelper" />
+        <entry key="resolve_search_tag" value="resolveSearchTag" />
+        <entry key="resp" value="Resp" />
+        <entry key="resp_page" value="RespPage" />
+        <entry key="router" value="router" />
+        <entry key="router_group" value="routerGroup" />
+        <entry key="scanner" value="Scanner" />
+        <entry key="table_data_info" value="TableDataInfo" />
+        <entry key="template_config" value="TemplateConfig" />
+        <entry key="template_engine" value="TemplateEngine" />
+        <entry key="template_render" value="TemplateRender" />
+        <entry key="token" value="Token" />
+        <entry key="ztree" value="Ztree" />
+      </map>
+    </option>
+    <option name="lastTimeChecked" value="1732942924694" />
+  </component>
+</project>

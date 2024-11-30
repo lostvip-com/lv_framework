@@ -278,3 +278,7 @@ func (e *ConfigDefault) LoadProxyInfo() *map[string]string {
 func (e *ConfigDefault) GetPartials() []string {
 	return []string{}
 } //
+
+func (e *ConfigDefault) GetLayoutPage() string {
+	return "" // 如： template/layout/master.html
+} //
