@@ -108,8 +108,8 @@ func InitGinRouter(contextPath string) *gin.Engine {
 	engine.HTMLRender = gintemplate.New(gintemplate.TemplateConfig{
 		Root:      "template",
 		Extension: ".html",
-		Master:    lv_global.Config().GetLayoutPage(), //全局套装
-		Partials:  lv_global.Config().GetPartials(),   //[]string{"header", "footer"}
+		Master:    "",
+		Partials:  lv_global.Config().GetPartials(), //[]string{"header", "footer", "system/menu/icon"}
 		Funcs:     template.FuncMap(lv_global.Config().GetFuncMap()),
 		CacheTpl:  lv_global.Config().IsCacheTpl(),
 	})
