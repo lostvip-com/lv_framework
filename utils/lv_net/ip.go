@@ -6,6 +6,67 @@ import (
 	"net"
 )
 
+// GET preferred outbound ip of this machine
+func GetOutboundIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8")
+	if err != nil {
+		return ""
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	fmt.Println(localAddr.String())
+	return localAddr.IP.String()
+}
+
+func GetLocalIP() (ip string, err error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return
+	}
+	for _, addr := range addrs {
+		ipAddr, ok := addr.(*net.IPNet)
+		if !ok {
+			continue
+		}
+		if ipAddr.IP.IsLoopback() {
+			continue
+		}
+		if !ipAddr.IP.IsGlobalUnicast() {
+			continue
+		}
+		return ipAddr.IP.String(), nil
+	}
+	return
+}
+
+// IsPrivateIP 判断是否为内网IP
+func IsPrivateIP(ipStr string) bool {
+	// 将字符串解析为 net.IP
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false // 如果解析失败，返回 false
+	}
+
+	// 定义内网IP地址段
+	privateIPBlocks := []*net.IPNet{
+		{IP: net.ParseIP("10.0.0.0"), Mask: net.CIDRMask(8, 32)},
+		{IP: net.ParseIP("172.16.0.0"), Mask: net.CIDRMask(12, 32)},
+		{IP: net.ParseIP("192.168.0.0"), Mask: net.CIDRMask(16, 32)},
+		{IP: net.ParseIP("127.0.0.0"), Mask: net.CIDRMask(8, 32)},
+		{IP: net.ParseIP("169.254.0.0"), Mask: net.CIDRMask(16, 32)},
+	}
+
+	// 遍历所有内网地址段，检查IP是否在其中
+	for _, block := range privateIPBlocks {
+		if block.Contains(ip) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func GetClientRealIP(c *gin.Context) string {
 	// 获取用户请求的 IP 地址
 	ip := c.Request.Header.Get("X-Real-IP")

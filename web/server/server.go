@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/lostvip-com/lv_framework/lv_global"
 	"github.com/lostvip-com/lv_framework/lv_log"
+	"github.com/lostvip-com/lv_framework/utils/lv_err"
 	"github.com/lostvip-com/lv_framework/web/gintemplate"
 	"github.com/lostvip-com/lv_framework/web/middleware"
 	"github.com/lostvip-com/lv_framework/web/router"
@@ -16,15 +17,14 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"syscall"
 	"time"
 )
 
 // HTTP服务结构体
-type MyServer struct {
+type MyHttpServer struct {
 	server         *http.Server
 	ServerName     string        //服务名称
-	Addr           string        //监听地址端口
+	Address        string        //监听地址端口
 	ServerRoot     string        //静态资源文件夹
 	Handler        *gin.Engine   //HTTP Handler
 	ReadTimeout    time.Duration //读取超时时间
@@ -33,16 +33,15 @@ type MyServer struct {
 }
 
 // 启动服务
-func (mySvr *MyServer) Start() {
+func (mySvr *MyHttpServer) ListenAndServe() {
 	mySvr.server = &http.Server{
-		Addr:           mySvr.Addr,
+		Addr:           mySvr.Address,
 		Handler:        mySvr.Handler,
 		ReadTimeout:    mySvr.ReadTimeout,
 		WriteTimeout:   mySvr.WriteTimeout,
 		MaxHeaderBytes: mySvr.MaxHeaderBytes,
 	}
-
-	log.Printf("[%v]Server listen: %v Actual pid is %d", mySvr.ServerName, mySvr.Addr, syscall.Getpid())
+	lv_log.Info("⛲  HTTP Server Listen: ", mySvr.Address)
 	host := lv_global.Config().GetServerIP()
 	path := lv_global.Config().GetContextPath()
 	port := cast.ToString(lv_global.Config().GetServerPort())
@@ -54,30 +53,35 @@ func (mySvr *MyServer) Start() {
 		fmt.Println("go.redis.host: " + lv_global.Config().GetValueStr("go.redis.host"))
 	}
 	fmt.Println("go.datasource.master: " + lv_global.Config().GetMaster())
-	//加载模板引擎
 	fmt.Println("http://localhost:" + port + strings.ReplaceAll(path, "//", "/"))
 	fmt.Println("http://localhost:" + port + strings.ReplaceAll(path+"/swagger/index.html", "//", "/"))
 	fmt.Println("http://" + host + ":" + port + strings.ReplaceAll(path+"/swagger/index.html", "//", "/"))
 	fmt.Println("##############################################################")
-	mySvr.server.ListenAndServe()
+	err := mySvr.server.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+		lv_log.Error("服务启动失败!!!" + err.Error())
+		lv_err.PrintStackTrace(err)
+		panic(err)
+	}
 }
 
-func (mySvr *MyServer) ShutDown() {
+func (mySvr *MyHttpServer) ShutDown() {
 	mySvr.server.Shutdown(context.Background())
 }
 
 // 创建服务
-func New(addr string) *MyServer {
-	gin.DefaultWriter = lv_log.GetLog().Out
+func NewHttpServer() *MyHttpServer {
+	gin.DefaultWriter = lv_log.GetLog().GetLogWriter()
 	contextPath := lv_global.Config().GetContextPath()
-	var s MyServer
+	port := lv_global.Config().GetServerPort()
+	var s MyHttpServer
 	s.WriteTimeout = 60 * time.Second
 	s.ReadTimeout = 60 * time.Second
-	s.Addr = addr
+	s.Address = "0.0.0.0:" + cast.ToString(port)
 	s.ServerName = lv_global.Config().GetAppName()
 	s.MaxHeaderBytes = 1 << 20
 	s.Handler = InitGinRouter(contextPath)
-
 	return &s
 }
 
@@ -99,14 +103,14 @@ func InitGinRouter(contextPath string) *gin.Engine {
 	routerBase := engine.Group(contextPath)
 	//routerBase.GET("/swagger/*any", gs.DisablingWrapHandler(swaggerFiles.Handler, lv_conf.KEY_SWAGGER_OFF))
 	tmp, _ := os.Getwd()
-	staticPath := tmp + "/static"
-	fmt.Println("设置静态目录：" + staticPath)
+	staticPath := tmp + "/resources/static"
+	fmt.Println("Static Path：" + staticPath)
 
 	routerBase.StaticFS("/static", http.Dir(staticPath))
 	routerBase.StaticFile("/favicon.ico", staticPath+"/favicon.ico")
 	//加载模板引擎
 	engine.HTMLRender = gintemplate.New(gintemplate.TemplateConfig{
-		Root:      "template",
+		Root:      "resources/template",
 		Extension: ".html",
 		Master:    "",
 		Partials:  lv_global.Config().GetPartials(), //[]string{"header", "footer", "system/menu/icon"}

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/lostvip-com/lv_framework/lv_log"
 	"io"
 	"io/ioutil"
 	"log"
@@ -41,22 +42,35 @@ func IsFileExist(addr string) bool {
 func IsPathExist(addr string) bool {
 	s, err := os.Stat(addr)
 	if err != nil {
-		log.Println(err)
+		lv_log.Error(err)
 		return false
 	}
 	return s.IsDir()
 }
 
-func FileCreate(content bytes.Buffer, name string) {
-	file, err := os.Create(name)
+func FileCreate(content bytes.Buffer, name string) (string, error) {
+	absPath, err := filepath.Abs(name)
 	if err != nil {
-		log.Println(err)
+		return name, err
+	}
+	dir := filepath.Dir(absPath)
+	err = os.MkdirAll(dir, 0755) // 创建目录及所有必要的上级目录，权限为0755
+	if err != nil {
+		lv_log.Error(err)
+		return name, err
+	}
+	file, err := os.Create(absPath)
+	defer file.Close()
+	if err != nil {
+		lv_log.Error(err)
+		return name, err
 	}
 	_, err = file.WriteString(content.String())
 	if err != nil {
-		log.Println(err)
+		lv_log.Error(err)
+		return name, err
 	}
-	file.Close()
+	return absPath, err
 }
 
 type ReplaceHelper struct {
@@ -139,7 +153,7 @@ func GetFileSize(filename string) int64 {
 	return result
 }
 
-// 获取当前路径，比如：E:/abc/data/test
+// GetCurrentPath 获取当前路径，注意不一定是exe所在目录，而是命令执行的目录
 func GetCurrentPath() string {
 	dir, err := os.Getwd()
 	if err != nil {

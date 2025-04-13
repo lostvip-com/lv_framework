@@ -48,7 +48,7 @@ type LvBatis struct {
  */
 func NewInstance(relativePath string) *LvBatis {
 	basePath, _ := os.Getwd()
-	absolutePath := basePath + "/mapper" //为了方便管理，必须把映射文件放到mapper目录
+	absolutePath := basePath + "/resources/mapper" //为了方便管理，必须把映射文件放到mapper目录
 	if strings.HasPrefix(relativePath, "/") {
 		absolutePath = absolutePath + relativePath
 	} else {

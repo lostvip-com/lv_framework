@@ -1,6 +1,7 @@
 package lv_office
 
 import (
+	"github.com/lostvip-com/lv_framework/lv_global"
 	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/spf13/cast"
 	"github.com/tealeg/xlsx"
@@ -83,14 +84,13 @@ func DownlaodExcel(heads []string, data [][]string) (string, error) {
 // 下载Excel
 func DownlaodExcelByListMap(heads, cols *[]string, listMap *[]map[string]any) (string, error) {
 	// 创建路径
-	curDir, err := os.Getwd()
 
 	if err != nil {
 		return "", err
 	}
 	curdate := time.Now().UnixNano()
 	filename := strconv.FormatInt(curdate, 10) + ".xlsx"
-	filePath := curDir + "/static/upload/" + filename
+	filePath := lv_global.Config().GetUploadPath() + "/" + filename
 	err = CreateFilePath(filePath)
 	if err != nil {
 		log.Printf("%s", err.Error())
@@ -148,13 +148,12 @@ func Write2Xlsx(filePath string, title *[]string, colKey *[]string, listData *[]
 // 下载Excel
 func DownlaodExcelByListMapStr(heads, cols *[]string, listMap *[]map[string]string) (string, error) {
 	// 创建路径
-	curDir, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
 	curdate := time.Now().UnixNano()
 	filename := strconv.FormatInt(curdate, 10) + ".xlsx"
-	filePath := curDir + "/static/upload/" + filename
+	filePath := lv_global.Config().GetTmpPath() + "/" + filename
 	err = CreateFilePath(filePath)
 	if err != nil {
 		log.Printf("%s", err.Error())

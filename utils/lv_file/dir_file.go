@@ -2,6 +2,7 @@ package lv_file
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -215,4 +216,23 @@ func Create(path string) (*os.File, error) {
 		Mkdir(dir)
 	}
 	return os.Create(path)
+}
+
+// GetCallerPath 获取调用者文件路径,编译成一个exe前是go代码所在路径,编译成exe后是exe所在路径
+func GetCallerPath() (string, error) {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		fmt.Println("Error getting caller information")
+		return "", errors.New("Error getting caller information")
+	}
+	projectDir := filepath.Dir(filename)
+	fmt.Println("Project directory:", projectDir)
+
+	// 如果你需要确保是绝对路径，可以进一步处理
+	absProjectDir, err := filepath.Abs(projectDir)
+	if err != nil {
+		fmt.Println("Error getting absolute path:", err)
+		return "", errors.New("Error getting caller information")
+	}
+	return absProjectDir, err
 }

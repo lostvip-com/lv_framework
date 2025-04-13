@@ -25,7 +25,7 @@ import (
 //	data, err := cmd2.CombinedOutput()
 //	fmt.Println("IsExeRuning strKey: %d --------------- err :%v",strKey,err)
 //	if err != nil && err.Error() != "exit status 1" {
-//		//XBLog.LogF("ServerMonitor", "IsExeRuning CombinedOutput error, err:%s", err.Error())
+//		//XBLogF("ServerMonitor", "IsExeRuning CombinedOutput error, err:%s", err.Error())
 //		return false
 //	}
 //

@@ -1,7 +1,7 @@
 <p align="center">
 	<img alt="logo" src="https://oscimg.oschina.net/oscnet/up-dd77653d7c9f197dd9d93684f3c8dcfbab6.png">
 </p>
-<h1 align="center" style="margin: 30px 0 30px; font-weight: bold;"> lv-framework v1.1.4 </h1>
+<h1 align="center" style="margin: 30px 0 30px; font-weight: bold;"> lv-framework v1.1.5 </h1>
 <h4 align="center">Go语言版轻量级快速开发框架</h4>
 
 
@@ -49,6 +49,9 @@
 go get github.com/lostvip-com/lv-framework
 ~~~
 
-## QQ交流群
-如有兴趣一起完善，进QQ群 43862272
+## 修改日志
+
+#### v1.1.9 工具包调整 2025-02-11
+* 1.移除iptocity.go
+* 2.lv_net包添加判断是否内网的方法
 

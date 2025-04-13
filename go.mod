@@ -1,13 +1,12 @@
 module github.com/lostvip-com/lv_framework
 
-go 1.20
+go 1.24
 
 require (
 	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-sql-driver/mysql v1.8.1
-	github.com/goccy/go-json v0.10.3
 	github.com/jinzhu/copier v0.4.0
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/morrisxyang/xreflect v0.0.0-20231001053442-6df0df9858ba
@@ -21,7 +20,7 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/sqlite v1.5.6
-	gorm.io/gorm v1.25.7
+	gorm.io/gorm v1.25.9
 )
 
 require (

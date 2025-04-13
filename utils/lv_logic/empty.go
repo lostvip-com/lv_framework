@@ -4,6 +4,10 @@ import (
 	"reflect"
 )
 
+func IsNotEmpty(value interface{}) bool {
+	return !IsEmpty(value)
+}
+
 // IsEmpty checks whether given <value> empty.
 // It returns true if <value> is in: 0, nil, false, "", len(slice/map/chan) == 0.
 // Or else it returns true.

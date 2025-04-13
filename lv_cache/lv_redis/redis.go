@@ -55,9 +55,6 @@ func NewRedisClient(indexDb int) *RedisClient {
 
 func (rcc *RedisClient) HMSet(key string, mp map[string]any, expiration time.Duration) error {
 	err := rcc.c.HSet(context.Background(), key, mp).Err()
-	if err != nil {
-		return err
-	}
 	err = rcc.c.Expire(context.Background(), key, expiration).Err()
 	return err
 }
@@ -76,16 +73,14 @@ func (rcc *RedisClient) Set(key string, value interface{}, expiration time.Durat
 }
 
 func (rcc *RedisClient) Get(key string) (data string, err error) {
-	return rcc.c.Get(context.Background(), key).Result()
+	data, err = rcc.c.Get(context.Background(), key).Result()
+	return data, err
 }
 
 func (rcc *RedisClient) Del(keys ...string) error {
 	var err error = nil
 	for _, key := range keys {
-		err0 := rcc.c.Del(context.Background(), key).Err()
-		if err != nil {
-			err = err0
-		}
+		err = rcc.c.Del(context.Background(), key).Err()
 	}
 	return err
 }
@@ -96,7 +91,8 @@ func (rcc *RedisClient) HSet(key string, values ...interface{}) error {
 }
 
 func (rcc *RedisClient) HGet(key, field string) (string, error) {
-	return rcc.c.HGet(context.Background(), key, field).Result()
+	data, err := rcc.c.HGet(context.Background(), key, field).Result()
+	return data, err
 }
 
 func (rcc *RedisClient) HDel(key string, fields ...string) error {

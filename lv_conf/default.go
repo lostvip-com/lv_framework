@@ -2,26 +2,50 @@ package lv_conf
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"text/template"
+
 	"github.com/lostvip-com/lv_framework/utils/lv_conv"
 	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/lostvip-com/lv_framework/utils/lv_net"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
-	"os"
-	"strings"
-	"text/template"
 )
 
 type ConfigDefault struct {
-	vipperCfg   *viper.Viper
-	proxyMap    map[string]string
-	proxyEnable bool
-	cacheTpl    bool //默认不缓存模板，方便调试
-	contextPath string
-	logLevel    string
-	autoMigrate string
+	vipperCfg     *viper.Viper
+	proxyMap      map[string]string
+	proxyEnable   bool
+	cacheTpl      bool //默认不缓存模板，方便调试
+	contextPath   string
+	resourcesPath string
+	logLevel      string
+	autoMigrate   string
 }
 
+func (e ConfigDefault) GetResourcesPath() string {
+	if e.resourcesPath == "" {
+		e.resourcesPath = e.GetValueStr("go.application.resources-path")
+	}
+	return e.resourcesPath
+}
+
+func (e ConfigDefault) GetUploadPath() string {
+	if e.resourcesPath == "" {
+		e.resourcesPath = e.GetValueStr("go.application.upload-path")
+	}
+	return e.resourcesPath
+}
+func (e ConfigDefault) GetTmpPath() string {
+	return "tmp" //固定临时文件目录
+}
+func (e ConfigDefault) GetGrpcPort() string {
+	return e.GetValueStr("server.grpc.port")
+}
+func (e ConfigDefault) GetHost() string {
+	return e.GetValueStr("server.host")
+}
 func (e *ConfigDefault) IsProxyEnabled() bool {
 	return false
 }

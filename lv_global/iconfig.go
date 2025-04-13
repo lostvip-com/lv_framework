@@ -2,8 +2,9 @@ package lv_global
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"html/template"
+
+	"github.com/spf13/viper"
 )
 
 var iconfig IConfig
@@ -17,6 +18,9 @@ func RegisterCfg(iconf IConfig) {
 }
 
 type IConfig interface {
+	GetUploadPath() string //用于提供对外服务地址
+	GetResourcesPath() string
+	GetTmpPath() string
 	GetServerPort() int
 	GetServerIP() string
 	GetContextPath() string
@@ -43,4 +47,6 @@ type IConfig interface {
 	GetFuncMap() template.FuncMap
 	GetAutoMigrate() string
 	GetPartials() []string
+	GetGrpcPort() string
+	GetHost() string
 }

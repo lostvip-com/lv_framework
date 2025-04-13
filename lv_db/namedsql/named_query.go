@@ -31,6 +31,27 @@ func Exec(db *gorm.DB, dmlSql string, req map[string]any) (int64, error) {
 	}
 }
 
+func GetOneMapByNamedSql(db *gorm.DB, limitSql string, req any, isCamel bool) (result *map[string]any, err error) {
+	list, err := ListMapAny(db, limitSql, req, isCamel)
+	var mpList []map[string]any = *list
+	if err == nil {
+		if mpList == nil || len(mpList) == 0 {
+			err = gorm.ErrRecordNotFound
+		} else {
+			result = &mpList[0]
+		}
+	}
+	return result, err
+}
+
+func toCamelMap(result *map[string]any) *map[string]any {
+	mp := make(map[string]any)
+	for k, v := range *result {
+		mp[cast.ToString(lv_sql.ToCamel(k))] = v
+	}
+	return &mp
+}
+
 /**
  * 通用泛型查询
  */
@@ -149,37 +170,44 @@ func ListMapAny(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[
 			return nil, err
 		}
 		// 根据列的类型将值转换为更具体的 Go 类型
+		var key string
 		for i, val := range values {
-			key := lv_sql.ToCamel(cols[i])
+			if isCamel {
+				key = lv_sql.ToCamel(cols[i])
+			}
 			if val == nil {
-				// 处理 NULL 值
 				rowData[key] = nil
 				continue
 			}
-
 			colType := types[i].DatabaseTypeName()
-			switch colType {
-			case "VARCHAR", "TEXT":
-				rowData[key] = cast.ToString(val)
-			case "INT", "INTEGER":
-				rowData[key] = cast.ToInt(val)
-			case "BIGINT":
-				rowData[key] = cast.ToInt64(val)
-			case "FLOAT", "DOUBLE":
-				rowData[key] = cast.ToFloat64(val)
-			case "DATETIME":
-				rowData[key] = cast.ToString(val)[:19]
-			case "DATE":
-				rowData[key] = cast.ToString(val)[:10]
-			default:
-				// 其他类型，直接存储 interface{}
-				rowData[key] = cast.ToString(val)
-			}
+			CastValueType(colType, rowData, key, val)
 		}
 		// 将处理好的行数据添加到结果切片中
 		results = append(results, rowData)
 	}
+
 	return &results, err
+}
+
+// CastValueType 根据列类型转换值类型
+func CastValueType(colType string, rowData map[string]any, key string, val interface{}) {
+	switch colType {
+	case "VARCHAR", "TEXT":
+		rowData[key] = cast.ToString(val)
+	case "INT", "INTEGER":
+		rowData[key] = cast.ToInt(val)
+	case "BIGINT":
+		rowData[key] = cast.ToInt64(val)
+	case "FLOAT", "DOUBLE":
+		rowData[key] = cast.ToFloat64(val)
+	case "DATETIME":
+		rowData[key] = cast.ToString(val)[:19]
+	case "DATE":
+		rowData[key] = cast.ToString(val)[:10]
+	default:
+		// 其他类型，直接存储 interface{}
+		rowData[key] = cast.ToString(val)
+	}
 }
 
 // ListMap sql查询返回map isCamel key是否按驼峰式命名

@@ -95,7 +95,8 @@ func createGorm(driverName, url string) *gorm.DB {
 	//}
 	gormDB, err := gorm.Open(dialector, config)
 	if err != nil {
-		panic("连接数据库失败" + err.Error())
+		fmt.Println("database: " + lv_global.Config().GetMaster())
+		panic("  gorm init failush！" + err.Error())
 	}
 	sqlDB, err := gormDB.DB() //dr
 	if err != nil {
@@ -103,6 +104,6 @@ func createGorm(driverName, url string) *gorm.DB {
 	}
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetMaxOpenConns(50)
-	lv_log.Info("########### lv_db conn 初始化成功！ #################")
+	lv_log.Info("###########  gorm init success！ #################")
 	return gormDB
 }

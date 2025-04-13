@@ -2,150 +2,129 @@ package lv_log
 
 import (
 	"fmt"
-	"github.com/lostvip-com/lv_framework/lv_conf"
-	"github.com/lostvip-com/lv_framework/lv_global"
-	"github.com/lostvip-com/lv_framework/utils/lv_file"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cast"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
-	"os"
 )
 
-var log *logrus.Logger
-
-func GetLog() *logrus.Logger {
-	if log == nil {
-		InitLog("boot.log")
-	}
-	return log
+type ILog interface {
+	Error(args ...interface{})
+	ErrorTraceId(traceId any, args ...interface{})
+	Fatal(args ...interface{})
+	FatalTraceId(traceId any, args ...interface{})
+	Warn(args ...interface{})
+	WarnTraceId(traceId any, args ...interface{})
+	Info(args ...interface{})
+	InfoTraceId(traceId any, args ...interface{})
+	Debug(args ...interface{})
+	DebugTraceId(traceId any, args ...interface{})
+	Errorf(format string, args ...interface{})
+	Warnf(format string, args ...interface{})
+	Infof(format string, args ...interface{})
+	Debugf(format string, args ...interface{})
+	GetLogWriter() io.Writer
 }
 
-func InitLog(fileName string) {
-	if lv_global.Config() == nil {
-		cfg := new(lv_conf.ConfigDefault)
-		lv_global.RegisterCfg(cfg)
+var Log ILog //主数据库
+
+func GetLog() ILog {
+	if Log == nil {
+		fmt.Println("log is nil!!!!!!!")
 	}
-	pwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	pwd = pwd + "/logs"
-	err = lv_file.PathCreateIfNotExist(pwd)
-	if err != nil {
-		panic(err)
-	}
-	if log == nil {
-		log = logrus.New()
-	}
-	logrus.SetFormatter(&logrus.TextFormatter{
-		DisableColors: true,
-		FullTimestamp: true,
-	})
-	level := lv_global.Config().GetLogLevel()
-	switch level {
-	case "":
-		log.SetLevel(logrus.ErrorLevel)
-	case "debug":
-		lv_global.IsDebug = true
-		log.SetLevel(logrus.DebugLevel)
-		fmt.Println("============ debug模式，输出日志到控制台 ============")
-	case "info":
-		log.SetLevel(logrus.InfoLevel)
-	case "warn":
-		log.SetLevel(logrus.WarnLevel)
-	case "fatal":
-		log.SetLevel(logrus.FatalLevel)
-		break
-	case "error":
-		log.SetLevel(logrus.ErrorLevel)
-	default:
-		panic("log level is not support: " + level)
-	}
-	maxSize := lv_global.Config().GetValueStr("go.log.max-size")
-	maxBackups := lv_global.Config().GetValueStr("go.log.max-backups")
-	maxAge := lv_global.Config().GetValueStr("go.log.max-age")
-	if maxSize == "" {
-		maxSize = "10"
-	}
-	if maxBackups == "" {
-		maxBackups = "5"
-	}
-	if maxAge == "" {
-		maxAge = "30"
-	}
-	fileLog := &lumberjack.Logger{
-		Filename:   pwd + "/" + fileName,
-		MaxSize:    cast.ToInt(maxSize),    // 日志文件最大 size, 单位是 MB
-		MaxBackups: cast.ToInt(maxBackups), // 最大过期日志保留的个数
-		MaxAge:     cast.ToInt(maxAge),     //保留过期文件的最大时间间隔,单位是天
-		Compress:   true,                   // disabled by default,是否需要压缩滚动日志, 使用的 gzip 压缩
-	}
-	var writers []io.Writer
-	output := lv_global.Config().GetValueStr("go.log.output")
-	if output == "stdout" { //只写控制台
-		writers = append(writers, os.Stdout)
-	} else if output == "file" { // 只写文件
-		writers = append(writers, fileLog)
-	} else { //同时写文件和屏幕
-		writers = append(writers, os.Stdout, fileLog)
-	}
-	multiWriter := io.MultiWriter(writers...)
-	log.SetOutput(multiWriter)
-	log.Info("初始化测试Log.Info 完成 ！！stdout:", output)
+	return Log
 }
 
 func Error(args ...interface{}) {
-	GetLog().Error(args)
+	if Log != nil {
+		Log.Error(args)
+	} else {
+		fmt.Println(args)
+	}
 }
 
 func ErrorTraceId(traceId any, args ...interface{}) {
-	GetLog().WithFields(logrus.Fields{
-		"traceId": traceId,
-	}).Error(args)
+	if Log != nil {
+		Log.Error(args)
+	} else {
+		fmt.Println(args)
+	}
 }
 func Fatal(args ...interface{}) {
-	GetLog().Fatal(args)
+	Log.Fatal(args)
 }
 func FatalTraceId(traceId any, args ...interface{}) {
-	GetLog().WithFields(logrus.Fields{
-		"traceId": traceId,
-	}).Fatal(args)
+	if Log != nil {
+		Log.Fatal(args)
+	} else {
+		fmt.Println(args)
+	}
 }
 func Warn(args ...interface{}) {
-	GetLog().Warn(args)
+	if Log != nil {
+		Log.Warn(args)
+	} else {
+		fmt.Println(args)
+	}
 }
 func WarnTraceId(traceId any, args ...interface{}) {
-	GetLog().WithFields(logrus.Fields{
-		"traceId": traceId,
-	}).Warn(args)
+	if Log != nil {
+		Log.Warn(args)
+	} else {
+		fmt.Println(args)
+	}
 }
 func Info(args ...interface{}) {
-	GetLog().Info(args)
+	if Log != nil {
+		Log.Info(args)
+	} else {
+		fmt.Println(args)
+	}
 }
 func InfoTraceId(traceId any, args ...interface{}) {
-	GetLog().WithFields(logrus.Fields{
-		"traceId": traceId,
-	}).Info(args)
+	if Log != nil {
+		Log.Info(args)
+	} else {
+		fmt.Println(args)
+	}
 }
 func Debug(args ...interface{}) {
-	GetLog().Debug(args...)
+	if Log != nil {
+		Log.Debug(args)
+	} else {
+		fmt.Println(args)
+	}
 }
 func DebugTraceId(traceId any, args ...interface{}) {
-	GetLog().WithFields(logrus.Fields{
-		"traceId": traceId,
-	}).Debug(args)
+	if Log != nil {
+		Log.Debug(args)
+	} else {
+		fmt.Println(args)
+	}
 }
 func Errorf(format string, args ...interface{}) {
-	GetLog().Errorf(format, args...)
+	if Log != nil {
+		Log.Errorf(format, args)
+	} else {
+		fmt.Printf("\n"+format, args)
+	}
 }
 func Warnf(format string, args ...interface{}) {
-	GetLog().Warnf(format, args...)
+	if Log != nil {
+		Log.Warnf(format, args)
+	} else {
+		fmt.Printf("\n"+format, args)
+	}
 }
 func Infof(format string, args ...interface{}) {
-	GetLog().Infof(format, args...)
+	if Log != nil {
+		Log.Infof(format, args)
+	} else {
+		fmt.Printf("\n"+format, args)
+	}
 }
 
 func Debugf(format string, args ...interface{}) {
-	GetLog().Debugf(format, args...)
+	if Log != nil {
+		Log.Debugf(format, args)
+	} else {
+		fmt.Printf("\n"+format, args)
+	}
 }

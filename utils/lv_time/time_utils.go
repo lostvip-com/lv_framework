@@ -1,6 +1,8 @@
 package lv_time
 
-import "time"
+import (
+	"time"
+)
 
 // 获取相差时间
 func GetHourDiffer(start_time, end_time string) int64 {
@@ -14,4 +16,13 @@ func GetHourDiffer(start_time, end_time string) int64 {
 	} else {
 		return hour
 	}
+}
+
+func ParseTime(str string) (time.Time, error) {
+	layout := "2006-01-02 15:04:05"   // 定义时间格式布局
+	t, err := time.Parse(layout, str) // 解析字符串
+	if err != nil {
+		return t, err
+	}
+	return t, nil // 返回时间指针
 }
