@@ -2,10 +2,10 @@ package lv_db
 
 import (
 	"fmt"
+	_ "github.com/glebarez/go-sqlite"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/lostvip-com/lv_framework/lv_global"
 	"github.com/lostvip-com/lv_framework/lv_log"
-	_ "github.com/mattn/go-sqlite3"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -85,7 +85,7 @@ func createGorm(driverName, url string) *gorm.DB {
 		dialector = sqlite.Open(url)
 	}
 
-	showSql := lv_global.Config().GetBool("go.datasource.show-sql")
+	showSql := lv_global.Config().GetBool("application.datasource.show-sql")
 	config := &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}} //表名用单数
 	if showSql {
 		config.Logger = logger.Default.LogMode(logger.Info)
