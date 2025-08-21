@@ -1,7 +1,10 @@
 package lv_sql
 
 import (
+	"errors"
 	"fmt"
+	"github.com/morrisxyang/xreflect"
+	"github.com/spf13/cast"
 	"reflect"
 	"strings"
 )
@@ -104,4 +107,25 @@ func ResolveSearchQuery(driver string, q interface{}, condition Condition) {
 			}
 		}
 	}
+}
+
+func GetLimitSql(sql string, params interface{}) (string, error) {
+	var pageNum, pageSize any
+	paramType := reflect.TypeOf(params).Kind()
+	if paramType == reflect.Map {
+		paramMap := params.(map[string]interface{})
+		pageNum = paramMap["pageNum"]
+		pageSize = paramMap["pageSize"]
+	} else {
+		pageNum, _ = xreflect.FieldValue(params, "PageNum")
+		pageSize, _ = xreflect.FieldValue(params, "PageSize")
+	}
+	if pageSize == nil || pageNum == nil {
+		return sql, errors.New("PageSize or PageNum nil error ")
+	}
+	start := cast.ToInt64(pageSize) * (cast.ToInt64(pageNum) - 1)
+	//sql = sql + " limit  " + cast.ToString(start) + "," + cast.ToString(pageSize)
+	// 改为可以兼容mysql和postgresql的分页方式
+	sql = sql + " limit  " + cast.ToString(pageSize) + " offset " + cast.ToString(start)
+	return sql, nil
 }

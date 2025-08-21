@@ -32,7 +32,7 @@ type MyHttpServer struct {
 	MaxHeaderBytes int           //http头大小设置
 }
 
-// 启动服务
+// ListenAndServe 启动服务
 func (mySvr *MyHttpServer) ListenAndServe() {
 	mySvr.server = &http.Server{
 		Addr:           mySvr.Address,
