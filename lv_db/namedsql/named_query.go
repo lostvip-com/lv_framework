@@ -28,12 +28,8 @@ func GetPageByNamedSql[T any](db *gorm.DB, sql string, req any) (*[]T, int64, er
 	if err != nil {
 		return rows, 0, err
 	}
-	count, err := Count(db, GetCountSql(sql), req)
+	count, err := Count(db, lv_sql.GetCountSql(sql), req)
 	return rows, count, err
-}
-
-func GetCountSql(sql string) string {
-	return " select count(*)  from (" + sql + ") t "
 }
 
 func Exec(db *gorm.DB, dmlSql string, req map[string]any) (int64, error) {
