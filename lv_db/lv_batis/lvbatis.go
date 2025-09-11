@@ -111,46 +111,71 @@ func (d *LvBatis) GetLimitSqlParams(tagName string, params interface{}) (string,
 }
 
 func (d *LvBatis) GetLimitSql(tagName string, params interface{}) (string, error) {
-	var pageNum, pageSize any
+	var pageNum, pageSize int
 	paramType := reflect.TypeOf(params).Kind()
 	sqlParams := d.Vars[tagName]
 	if paramType == reflect.Map {
 		paramMap := params.(map[string]interface{})
-		pageNum = paramMap["pageNum"]
-		pageSize = paramMap["pageSize"]
+		pNum := paramMap["pageNum"]
+		pSize := paramMap["pageSize"]
+		pageNum  = cast.ToInt(pNum)
+		pageSize = cast.ToInt(pSize)
 		for key, value := range paramMap { //合并参数
 			sqlParams[key] = value // 覆盖或新增键值对
 		}
 	} else {
-		pageNum, _ = xreflect.FieldValue(params, "PageNum")
-		pageSize, _ = xreflect.FieldValue(params, "PageSize")
+		pNum, _ := xreflect.FieldValue(params, "PageNum")
+		pSize, _ := xreflect.FieldValue(params, "PageSize")
+		pageNum  = cast.ToInt(pNum)
+		pageSize = cast.ToInt(pSize)
 		lv_reflect.CopyProperties2Map(params, sqlParams) //合并参数
 	}
-	if pageSize == nil || pageNum == nil {
-		return "", errors.New("pageSize and pageNum can not be empty! ")
+
+	if pageSize==0{
+		pageSize = 1000;
 	}
-	sql, err := d.GetSql(tagName, sqlParams)
+	if pageNum == 0 {
+		pageNum = 1
+	}
+	if d.CurrBaseSql == "" {
+		sql,err := d.GetSql(tagName, sqlParams)
+		if err!=nil{
+			return "",err
+		}
+		d.CurrBaseSql = sql
+	}
 	start := cast.ToInt64(pageSize) * (cast.ToInt64(pageNum) - 1)
 	//sql = sql + " limit  " + cast.ToString(start) + "," + cast.ToString(pageSize)
 	// 改为可以兼容mysql和postgresql的分页方式
-	sql = sql + " limit  " + cast.ToString(pageSize) + " offset " + cast.ToString(start)
-	return sql, err
-}
-
-func (d *LvBatis) GetCountSql() (string, error) {
-	if d.CurrBaseSql == "" {
-		return d.CurrBaseSql, errors.New("未初始化过ibatis对象,未传入过sql参数！" + d.getTplFile())
-	}
-	sql := " select count(*)  from (" + d.CurrBaseSql + ") t "
+	sql := d.CurrBaseSql + " limit  " + cast.ToString(pageSize) + " offset " + cast.ToString(start)
 	return sql, nil
 }
 
-func (d *LvBatis) GetPageSql(tagName string, params any) (string, string, error) {
-	countSql, err := d.GetCountSql()
+func (d *LvBatis) GetCountSql(tagName string, sqlParams interface{}) (string, error) {
+	if d.CurrBaseSql == "" {
+		sql,err := d.GetSql(tagName, sqlParams)
+		if err!=nil{
+			return "",err
+		}
+		d.CurrBaseSql = sql
+	}
+	index := strings.Index(d.CurrBaseSql, " order ")
+	noOrderSql := d.CurrBaseSql
+	if index >20  { // select * from t where order by
+		noOrderSql = d.CurrBaseSql[:index]
+	}else{
+		noOrderSql = d.CurrBaseSql
+	}
+	sql := " select count(*)  from (" + noOrderSql + ") t "
+	return sql, nil
+}
+
+func (d *LvBatis) GetPageSql(tagName string, sqlParams any) (string, string, error) {
+	countSql, err := d.GetCountSql(tagName,sqlParams)
 	if err != nil {
 		return "", "", err
 	}
-	limitSql, err := d.GetLimitSql(tagName, params)
+	limitSql, err := d.GetLimitSql(tagName, sqlParams)
 	return limitSql, countSql, err
 }
 
