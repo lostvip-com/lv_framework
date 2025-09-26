@@ -3,7 +3,6 @@ package lv_dao
 import (
 	"context"
 	"errors"
-	"github.com/lostvip-com/lv_framework/lv_db"
 	"github.com/lostvip-com/lv_framework/lv_db/lv_batis"
 	"github.com/lostvip-com/lv_framework/lv_db/namedsql"
 	"gorm.io/gorm"
@@ -31,8 +30,7 @@ func ListData2Map[T any](db *gorm.DB, limitSql string, req any, mapKey string) (
 	return namedsql.ListData2Map[T](db, limitSql, req, mapKey)
 }
 func GetOneMapByNamedSql(db *gorm.DB, sql string, req any, isCamel bool) (*map[string]any, error) {
-	d := lv_db.GetOrmDefault()
-	mp, err := namedsql.GetOneMapByNamedSql(d, sql, req, isCamel)
+	mp, err := namedsql.GetOneMapByNamedSql(db, sql, req, isCamel)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +39,7 @@ func GetOneMapByNamedSql(db *gorm.DB, sql string, req any, isCamel bool) (*map[s
 
 // ListByNamedSql 通用泛型查询
 func ListByNamedSql[T any](db *gorm.DB, sql string, req any) (*[]T, error) {
-	return namedsql.ListData[T](lv_db.GetOrmDefault(), sql, req)
+	return namedsql.ListData[T](db, sql, req)
 }
 
 func CountByNamedSql(db *gorm.DB, sql string, params any) (int64, error) {
