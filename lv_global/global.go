@@ -8,4 +8,9 @@ const FLAG_DEL_NO = 0
 const KEY_SWAGGER_OFF = "SwaggerOff"
 
 var TraceId = "traceId"
-var Version = "1.0.2"
+
+// yaml key
+const (
+	KEY_CACHE_TYPE      = "application.cache-type"
+	SESSION_TIMEOUT_KEY = "application.session.timeout" // 会话超时配置key
+)

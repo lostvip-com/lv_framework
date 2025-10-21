@@ -3,6 +3,7 @@ package lv_global
 import (
 	"fmt"
 	"html/template"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -54,4 +55,5 @@ type IConfig interface {
 	GetPartials() []string
 	GetGrpcPort() string
 	GetHost() string
+	GetSessionTimeout(defaultTimeout time.Duration) time.Duration
 }

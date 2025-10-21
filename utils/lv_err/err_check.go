@@ -1,8 +1,11 @@
 package lv_err
 
 import (
+	"database/sql"
+	"errors"
 	"github.com/lostvip-com/lv_framework/utils/lv_json"
 	"github.com/lostvip-com/lv_framework/web/lv_dto"
+	"gorm.io/gorm"
 	"log"
 	"runtime"
 )
@@ -63,4 +66,7 @@ func HasError1(err error) {
 		res.Code = 1
 		panic(res)
 	}
+}
+func IsRecordNotFound(err error) bool {
+	return errors.Is(err, gorm.ErrRecordNotFound) || errors.Is(err, sql.ErrNoRows)
 }

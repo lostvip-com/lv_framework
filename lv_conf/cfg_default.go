@@ -2,6 +2,8 @@ package lv_conf
 
 import (
 	"fmt"
+	"github.com/lostvip-com/lv_framework/lv_global"
+	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/lostvip-com/lv_framework/utils/lv_conv"
 	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/lostvip-com/lv_framework/utils/lv_net"
@@ -10,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"time"
 )
 
 var appName string
@@ -17,14 +20,35 @@ var defaultDB = ""
 var defaultDBDriver = ""
 
 type CfgDefault struct {
-	vipperCfg     *viper.Viper
-	proxyMap      map[string]string
-	proxyEnable   bool
-	cacheTpl      bool //默认不缓存模板，方便调试
-	contextPath   string
-	resourcesPath string
-	logLevel      string
-	autoMigrate   string
+	vipperCfg      *viper.Viper
+	proxyMap       map[string]string
+	proxyEnable    bool
+	cacheTpl       bool //默认不缓存模板，方便调试
+	contextPath    string
+	resourcesPath  string
+	logLevel       string
+	autoMigrate    string
+	sessionTimeout time.Duration
+}
+
+func (e *CfgDefault) GetSessionTimeout(defaultTimeout time.Duration) time.Duration {
+	if e.sessionTimeout > 0 {
+		return e.sessionTimeout
+	}
+	timeoutStr := e.GetValueStr(lv_global.SESSION_TIMEOUT_KEY)
+	if timeoutStr == "" { // 设置一个长期的过期时间
+		lv_log.Warn("No session timeout configured! default:", defaultTimeout)
+		e.sessionTimeout = defaultTimeout
+	} else {
+		timeout, err := time.ParseDuration(timeoutStr)
+		if err != nil {
+			lv_log.Error("time.ParseDuration(timeout) error:", err)
+			e.sessionTimeout = defaultTimeout
+		} else {
+			e.sessionTimeout = timeout
+		}
+	}
+	return e.sessionTimeout
 }
 
 func (e *CfgDefault) GetDBNameDefault() string {
@@ -47,7 +71,6 @@ func (e *CfgDefault) GetResourcesPath() string {
 	}
 	return e.resourcesPath
 }
-
 func (e *CfgDefault) GetUploadPath() string {
 	if e.resourcesPath == "" {
 		e.resourcesPath = e.GetValueStr("application.upload-path")

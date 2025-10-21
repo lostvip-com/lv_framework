@@ -214,21 +214,26 @@ func ListMap(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[str
 		rows, err = db.Raw(sqlQuery).Rows()
 	}
 	if err != nil {
-		return nil, fmt.Errorf("query execution failed: %w", err)
+		return nil, err
 	}
 	if rows == nil {
-		return nil, fmt.Errorf("query returned nil rows")
+		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			lv_log.Error(err)
+		}
+	}(rows)
 
 	// 2. Get column information
 	cols, err := rows.Columns()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get columns: %w", err)
+		return nil, err
 	}
 	colTypes, err := rows.ColumnTypes()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get column types: %w", err)
+		return nil, err
 	}
 	// 3. Initialize scan buffers
 	values := make([]interface{}, len(cols))
@@ -291,7 +296,7 @@ func ListMap(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[str
 	result := make([]map[string]any, 0)
 	for rows.Next() {
 		if err = rows.Scan(scanArgs...); err != nil {
-			return nil, fmt.Errorf("row scan failed: %w", err)
+			return nil, err
 		}
 
 		rowData := make(map[string]any)
@@ -344,7 +349,7 @@ func ListMap(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[str
 	}
 	// 5. Check for iteration errors
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("row iteration failed: %w", err)
+		return nil, err
 	}
 
 	return &result, nil
