@@ -151,7 +151,14 @@ func (e *CfgDefault) GetBool(key string) bool {
 		return false
 	}
 }
-
+func (e *CfgDefault) GetInt(key string) int {
+	if e.vipperCfg == nil {
+		e.LoadConf()
+	}
+	val := cast.ToString(e.vipperCfg.Get(key))
+	val = e.parseVal(val)
+	return cast.ToInt(val)
+}
 func (e *CfgDefault) parseVal(val string) string {
 	if strings.HasPrefix(val, "$") { //存在动态表达式
 		val = strings.TrimSpace(val)             //去空格
@@ -348,14 +355,14 @@ func (e *CfgDefault) IsProxyEnable() bool {
 	return e.proxyEnable
 }
 
-func (e *CfgDefault) GetProxyMap() *map[string]string {
+func (e *CfgDefault) GetProxyMap() map[string]string {
 	if e.proxyEnable && e.proxyMap == nil {
 		e.LoadProxyInfo()
 	}
-	return &e.proxyMap
+	return e.proxyMap
 }
 
-func (e *CfgDefault) LoadProxyInfo() *map[string]string {
+func (e *CfgDefault) LoadProxyInfo() map[string]string {
 	fmt.Println("######### 加载代理配置信息 start #############")
 	if !e.IsProxyEnable() {
 		return nil
@@ -371,7 +378,7 @@ func (e *CfgDefault) LoadProxyInfo() *map[string]string {
 	e.proxyEnable = e.GetBool("application.proxy.enable")
 	fmt.Println("application.proxy:", e.proxyMap)
 	fmt.Println("######### 加载代理配置信息 end #############")
-	return &e.proxyMap
+	return e.proxyMap
 }
 
 func (e *CfgDefault) GetPartials() []string {

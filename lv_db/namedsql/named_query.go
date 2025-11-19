@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-func GetPageByNamedSql[T any](db *gorm.DB, sql string, req any) (*[]T, int64, error) {
+func GetPage[T any](db *gorm.DB, sql string, req any) ([]T, int64, error) {
 	//查询数据
 	limitSql, err := lv_sql.GetLimitSql(sql, req)
 	if err != nil {
@@ -31,7 +31,19 @@ func GetPageByNamedSql[T any](db *gorm.DB, sql string, req any) (*[]T, int64, er
 	count, err := Count(db, lv_sql.GetCountSql(sql), req)
 	return rows, count, err
 }
-
+func GetPageMap(db *gorm.DB, sql string, req any, isCamel bool) ([]map[string]any, int64, error) {
+	//查询数据
+	limitSql, err := lv_sql.GetLimitSql(sql, req)
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := ListMapAny(db, limitSql, req, isCamel)
+	if err != nil {
+		return rows, 0, err
+	}
+	count, err := Count(db, lv_sql.GetCountSql(sql), req)
+	return rows, count, err
+}
 func Exec(db *gorm.DB, dmlSql string, req map[string]any) (int64, error) {
 	if lv_global.IsDebug {
 		db = db.Debug()
@@ -49,31 +61,30 @@ func Exec(db *gorm.DB, dmlSql string, req map[string]any) (int64, error) {
 	}
 }
 
-func GetOneMapByNamedSql(db *gorm.DB, limitSql string, req any, isCamel bool) (result *map[string]any, err error) {
+func GetOneMap(db *gorm.DB, limitSql string, req any, isCamel bool) (result map[string]any, err error) {
 	list, err := ListMap(db, limitSql, req, isCamel)
 	if err == nil {
-		var mpList = *list
-		if mpList == nil || len(mpList) == 0 {
+		if list == nil || len(list) == 0 {
 			err = gorm.ErrRecordNotFound
 		} else {
-			result = &mpList[0]
+			result = list[0]
 		}
 	}
 	return result, err
 }
 
-func toCamelMap(result *map[string]any) *map[string]any {
+func toCamelMap(result map[string]any) map[string]any {
 	mp := make(map[string]any)
-	for k, v := range *result {
+	for k, v := range result {
 		mp[cast.ToString(lv_sql.ToCamel(k))] = v
 	}
-	return &mp
+	return mp
 }
 
 /**
  * 通用泛型查询
  */
-func ListData[T any](db *gorm.DB, limitSql string, req any) (*[]T, error) {
+func ListData[T any](db *gorm.DB, limitSql string, req any) ([]T, error) {
 	var list = make([]T, 0)
 	var err error
 	if lv_global.IsDebug {
@@ -89,17 +100,17 @@ func ListData[T any](db *gorm.DB, limitSql string, req any) (*[]T, error) {
 		err = db.Raw(limitSql).Scan(&list).Error
 	}
 
-	return &list, err
+	return list, err
 }
 
 // ListData2Map 通用泛型查询
-func ListData2Map[T any](db *gorm.DB, limitSql string, req any, mapKey string) (*map[string]T, error) {
+func ListData2Map[T any](db *gorm.DB, limitSql string, req any, mapKey string) (map[string]T, error) {
 	listPtr, err := ListData[T](db, limitSql, req)
 	if err != nil {
 		return nil, err
 	}
 	mp := make(map[string]T)
-	list := *listPtr
+	list := listPtr
 	for i := range list {
 		it := list[i]
 		valueAsKey, ok := lv_reflect.GetFieldValueSimple(it, mapKey)
@@ -109,16 +120,15 @@ func ListData2Map[T any](db *gorm.DB, limitSql string, req any, mapKey string) (
 			lv_log.Warn("mapKey not found", mapKey)
 		}
 	}
-	return &mp, err
+	return mp, err
 }
 
-func ListMap2Map(db *gorm.DB, limitSql string, req any, mapKey string, isCamel bool) (*map[string]map[string]any, error) {
-	listPtr, err := ListMap(db, limitSql, req, isCamel)
+func ListMap2Map(db *gorm.DB, limitSql string, req any, mapKey string, isCamel bool) (map[string]map[string]any, error) {
+	list, err := ListMap(db, limitSql, req, isCamel)
 	if err != nil {
 		return nil, err
 	}
 	mp := make(map[string]map[string]any)
-	list := *listPtr
 	for i := range list {
 		it := list[i]
 		valueAsKey, ok := it[mapKey]
@@ -128,7 +138,7 @@ func ListMap2Map(db *gorm.DB, limitSql string, req any, mapKey string, isCamel b
 			lv_log.Warn("mapKey not found", mapKey)
 		}
 	}
-	return &mp, err
+	return mp, err
 }
 
 func Count(db *gorm.DB, countSql string, params any) (int64, error) {
@@ -174,19 +184,19 @@ func Count(db *gorm.DB, countSql string, params any) (int64, error) {
  */
 func checkAndExtractMap(value interface{}) (map[string]any, bool) {
 	// 判断是否是指针类型
-	if ptr, ok := value.(*map[string]any); ok {
+	if ptr, ok := value.(map[string]any); ok {
 		// 指针指向Map类型
-		return *ptr, true
+		return ptr, true
 	}
 	return nil, false
 }
 
-func ListMapAny(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[string]any, error) {
+func ListMapAny(db *gorm.DB, sqlQuery string, params any, isCamel bool) ([]map[string]any, error) {
 	return ListMap(db, sqlQuery, params, isCamel)
 }
 
 // ListMap sql查询返回map isCamel key是否按驼峰式命名,有些数据会出现2进制输出
-func ListMap(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[string]any, error) {
+func ListMap(db *gorm.DB, sqlQuery string, params any, isCamel bool) ([]map[string]any, error) {
 	// Validate inputs
 	if db == nil {
 		return nil, fmt.Errorf("db cannot be nil")
@@ -352,10 +362,10 @@ func ListMap(db *gorm.DB, sqlQuery string, params any, isCamel bool) (*[]map[str
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
-func ListArrStr(db *gorm.DB, sqlQuery string, params any) (*[][]string, error) {
+func ListArrStr(db *gorm.DB, sqlQuery string, params any) ([][]string, error) {
 	if lv_global.IsDebug {
 		db = db.Debug()
 	}
@@ -401,7 +411,7 @@ func ListArrStr(db *gorm.DB, sqlQuery string, params any) (*[][]string, error) {
 		}
 		listRows = append(listRows, row)
 	}
-	return &listRows, err
+	return listRows, err
 }
 
 // ListOneColStr 查询某一列，放到数组中

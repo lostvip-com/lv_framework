@@ -31,7 +31,7 @@ func IfProxyForward() func(c *gin.Context) {
 func getProxyPrefixAndHostPort(uri string) (string, string) {
 	instance := lv_global.Config()
 	mp := instance.GetProxyMap()
-	for k, v := range *mp {
+	for k, v := range mp {
 		fmt.Println(k, "==============", v)
 		if strings.HasPrefix(uri, k) {
 			return k, v

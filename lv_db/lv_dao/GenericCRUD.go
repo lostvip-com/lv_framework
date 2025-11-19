@@ -38,7 +38,7 @@ func (g *GenericCRUD[T]) FindById(out *T, id uint) error {
 }
 
 // FindList 根据ID查找记录
-func (g *GenericCRUD[T]) FindList(list *[]T, start int, pageSize int, condition string, args ...any) error {
+func (g *GenericCRUD[T]) FindList(list []T, start int, pageSize int, condition string, args ...any) error {
 	result := g.db.Where(condition, args...).Offset(start).Limit(pageSize).Find(list)
 	return result.Error
 }

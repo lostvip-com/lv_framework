@@ -47,7 +47,8 @@ type IConfig interface {
 	GetConf(key string) string
 	GetValueStr(key string) string
 	GetBool(key string) bool
-	GetProxyMap() *map[string]string
+	GetInt(key string) int
+	GetProxyMap() map[string]string
 	IsProxyEnabled() bool
 	LoadConf()
 	GetFuncMap() template.FuncMap

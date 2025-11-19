@@ -23,33 +23,15 @@ import (
 
 // MyHttpServer 统一支持 HTTP/HTTPS
 type MyHttpServer struct {
-	server     *http.Server
+	HttpServer *http.Server
+	//grcServer
 	ServerName string
-	Address    string
-	ServerRoot string
-	Handler    *gin.Engine
-
-	ReadTimeout    time.Duration
-	WriteTimeout   time.Duration
-	MaxHeaderBytes int
-
-	CertFile string // 证书路径，空则走 HTTP
-	KeyFile  string // 私钥路径
 }
 
 // ListenAndServe 启动 HTTP/HTTPS，并自带优雅关闭
 func (s *MyHttpServer) ListenAndServe() {
-	s.server = &http.Server{
-		Addr:           s.Address,
-		Handler:        s.Handler,
-		ReadTimeout:    s.ReadTimeout,
-		WriteTimeout:   s.WriteTimeout,
-		MaxHeaderBytes: s.MaxHeaderBytes,
-	}
-
 	// 打印 Banner
 	s.printBanner()
-
 	// 优雅关闭：捕获 Ctrl+C / kill -15
 	go func() {
 		sig := make(chan os.Signal, 1)
@@ -58,19 +40,21 @@ func (s *MyHttpServer) ListenAndServe() {
 		lv_log.Info("收到退出信号，开始优雅关闭 ...")
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		if err := s.server.Shutdown(ctx); err != nil {
+		if err := s.HttpServer.Shutdown(ctx); err != nil {
 			lv_log.Error("Shutdown err:", err)
 		}
 	}()
-
+	ssl := lv_global.Config().GetBool("server.ssl")
+	certFile := lv_global.Config().GetValueStr("server.cert")
+	keyFile := lv_global.Config().GetValueStr("server.key")
 	// 真正启动
 	var err error
-	if s.CertFile != "" && s.KeyFile != "" {
-		lv_log.Info("⛓  HTTPS Server Listen: ", s.Address)
-		err = s.server.ListenAndServeTLS(s.CertFile, s.KeyFile)
+	if ssl {
+		lv_log.Info("⛓  HTTPS Server Listen: ", s.HttpServer.Addr)
+		err = s.HttpServer.ListenAndServeTLS(certFile, keyFile)
 	} else {
-		lv_log.Info("⛲  HTTP Server Listen: ", s.Address)
-		err = s.server.ListenAndServe()
+		lv_log.Info("⛲  HTTP Server Listen: ", s.HttpServer.Addr)
+		err = s.HttpServer.ListenAndServe()
 	}
 	if err != nil {
 		lv_log.Error("服务启动失败!!!" + err.Error())
@@ -84,7 +68,7 @@ func (s *MyHttpServer) ListenAndServe() {
 func (s *MyHttpServer) ShutDown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	return s.server.Shutdown(ctx)
+	return s.HttpServer.Shutdown(ctx)
 }
 
 // printBanner 打印控制台地址
@@ -92,8 +76,9 @@ func (s *MyHttpServer) printBanner() {
 	host := lv_global.Config().GetServerIP()
 	path := lv_global.Config().GetContextPath()
 	port := cast.ToString(lv_global.Config().GetServerPort())
+	ssl := lv_global.Config().GetBool("server.ssl")
 	proto := "http"
-	if s.CertFile != "" && s.KeyFile != "" {
+	if ssl {
 		proto = "https"
 	}
 	fmt.Println(strings.Repeat("#", 62))
@@ -111,18 +96,15 @@ func NewHttpServer() *MyHttpServer {
 	gin.DefaultWriter = lv_log.GetLog().GetLogWriter()
 	contextPath := lv_global.Config().GetContextPath()
 	port := lv_global.Config().GetServerPort()
-	certFile := lv_global.Config().GetValueStr("server.cert")
-	keyFile := lv_global.Config().GetValueStr("server.key")
-	return &MyHttpServer{
-		ServerName:     lv_global.Config().GetAppName(),
-		Address:        "0.0.0.0:" + cast.ToString(port),
+	httpServer := &MyHttpServer{ServerName: lv_global.Config().GetAppName()}
+	httpServer.HttpServer = &http.Server{
+		Addr:           "0.0.0.0:" + cast.ToString(port),
 		Handler:        InitGinRouter(contextPath),
 		ReadTimeout:    60 * time.Second,
 		WriteTimeout:   60 * time.Second,
 		MaxHeaderBytes: 1 << 20,
-		CertFile:       certFile, // 配置空则走 HTTP
-		KeyFile:        keyFile,
 	}
+	return httpServer
 }
 
 // InitGinRouter 保持不变

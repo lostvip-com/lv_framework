@@ -1,6 +1,7 @@
 package lv_db
 
 import (
+	"context"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/lostvip-com/lv_framework/lv_global"
@@ -12,6 +13,7 @@ import (
 	"gorm.io/gorm/schema"
 	"strings"
 	"sync"
+	"time"
 )
 
 type dbEngine struct {
@@ -36,7 +38,7 @@ func GetInstance() *dbEngine {
 	return instance
 }
 
-// GetDB 获取操作实例 如果传入slave 并且成功配置了slave 返回slave orm引擎 否则返回master orm引擎
+// GetOrmDB 获取操作实例 如果传入slave 并且成功配置了slave 返回slave orm引擎 否则返回master orm引擎
 func (db *dbEngine) GetOrmDB(dbName string) *gorm.DB {
 	gdb := db.gormMap[dbName]
 	if gdb == nil {
@@ -128,4 +130,11 @@ func createGormDB(driverName, url string) *gorm.DB {
 	sqlDB.SetMaxOpenConns(50)
 	lv_log.Info("###########  gorm init success！ #################")
 	return gormDB
+}
+
+func Transaction(db *gorm.DB, timeout time.Duration, fn func(tx *gorm.DB) error) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	err := db.WithContext(ctx).Transaction(fn)
+	return err
 }
