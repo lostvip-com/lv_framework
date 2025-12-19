@@ -1,12 +1,12 @@
 package lv_sql
 
 type GeneralDelDto struct {
-	Id  int   `uri:"id" json:"id" validate:"required"`
-	Ids []int `json:"ids"`
+	Id  int64   `uri:"id" json:"id" validate:"required"`
+	Ids []int64 `json:"ids"`
 }
 
-func (g GeneralDelDto) GetIds() []int {
-	ids := make([]int, 0)
+func (g GeneralDelDto) GetIds() []int64 {
+	ids := make([]int64, 0)
 	if g.Id != 0 {
 		ids = append(ids, g.Id)
 	}

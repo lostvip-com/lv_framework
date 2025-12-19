@@ -17,7 +17,6 @@ func SubStr(str string, startIndex, endIndex int) string {
 	return string(rs[startIndex:endIndex])
 }
 
-// 将带分隔符的字符串切成int64数组
 func ToIntArray(str, split string) []int {
 	result := make([]int, 0)
 	if str == "" {
@@ -28,6 +27,21 @@ func ToIntArray(str, split string) []int {
 		for i := range arr {
 			if arr[i] != "" {
 				result = append(result, cast.ToInt(arr[i]))
+			}
+		}
+	}
+	return result
+}
+func ToInt64Array(str, split string) []int64 {
+	result := make([]int64, 0)
+	if str == "" {
+		return result
+	}
+	arr := strings.Split(str, split)
+	if len(arr) > 0 {
+		for i := range arr {
+			if arr[i] != "" {
+				result = append(result, cast.ToInt64(arr[i]))
 			}
 		}
 	}

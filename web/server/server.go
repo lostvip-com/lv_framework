@@ -10,15 +10,16 @@ import (
 	"syscall"
 	"time"
 
+	"html/template"
+
 	"github.com/gin-gonic/gin"
-	"github.com/lostvip-com/lv_framework/lv_global"
+	"github.com/lostvip-com/lv_framework/lv_conf"
 	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/lostvip-com/lv_framework/utils/lv_err"
 	"github.com/lostvip-com/lv_framework/web/gintemplate"
 	"github.com/lostvip-com/lv_framework/web/middleware"
 	"github.com/lostvip-com/lv_framework/web/router"
 	"github.com/spf13/cast"
-	"html/template"
 )
 
 // MyHttpServer 统一支持 HTTP/HTTPS
@@ -44,9 +45,9 @@ func (s *MyHttpServer) ListenAndServe() {
 			lv_log.Error("Shutdown err:", err)
 		}
 	}()
-	ssl := lv_global.Config().GetBool("server.ssl")
-	certFile := lv_global.Config().GetValueStr("server.cert")
-	keyFile := lv_global.Config().GetValueStr("server.key")
+	ssl := lv_conf.Config().GetBool("server.ssl")
+	certFile := lv_conf.Config().GetValueStr("server.cert")
+	keyFile := lv_conf.Config().GetValueStr("server.key")
 	// 真正启动
 	var err error
 	if ssl {
@@ -73,19 +74,22 @@ func (s *MyHttpServer) ShutDown() error {
 
 // printBanner 打印控制台地址
 func (s *MyHttpServer) printBanner() {
-	host := lv_global.Config().GetServerIP()
-	path := lv_global.Config().GetContextPath()
-	port := cast.ToString(lv_global.Config().GetServerPort())
-	ssl := lv_global.Config().GetBool("server.ssl")
+	host := lv_conf.Config().GetServerIP()
+	path := lv_conf.Config().GetContextPath()
+	port := cast.ToString(lv_conf.Config().GetServerPort())
+	ssl := lv_conf.Config().GetBool("server.ssl")
 	proto := "http"
 	if ssl {
 		proto = "https"
 	}
 	fmt.Println(strings.Repeat("#", 62))
-	fmt.Println("application.name: " + lv_global.Config().GetAppName())
-	fmt.Println("application.cache: " + lv_global.Config().GetValueStr("application.cache"))
-	fmt.Println("application.redis.host: " + lv_global.Config().GetValueStr("application.redis.host"))
-	fmt.Println("application.datasource.default: " + lv_global.Config().GetDBUrlDefault())
+	fmt.Println("application.name: " + lv_conf.Config().GetAppName())
+	cacheType := lv_conf.Config().GetValueStr("application.cache-type")
+	fmt.Println("application.cache-type: " + cacheType)
+	if cacheType == "redis" {
+		lv_log.Debug("application.redis.host: " + lv_conf.Config().GetValueStr("application.redis.host"))
+	}
+	lv_log.Debug("application.datasource.default: " + lv_conf.Config().GetDBUrlDefault())
 	fmt.Printf("%s://localhost:%s%s\n", proto, port, strings.ReplaceAll(path, "//", "/"))
 	fmt.Printf("%s://%s:%s%s\n", proto, host, port, strings.ReplaceAll(path, "//", "/"))
 	fmt.Println(strings.Repeat("#", 62))
@@ -94,9 +98,9 @@ func (s *MyHttpServer) printBanner() {
 // NewHttpServer 构造器：读取配置，自动区分 HTTP/HTTPS
 func NewHttpServer() *MyHttpServer {
 	gin.DefaultWriter = lv_log.GetLog().GetLogWriter()
-	contextPath := lv_global.Config().GetContextPath()
-	port := lv_global.Config().GetServerPort()
-	httpServer := &MyHttpServer{ServerName: lv_global.Config().GetAppName()}
+	contextPath := lv_conf.Config().GetContextPath()
+	port := lv_conf.Config().GetServerPort()
+	httpServer := &MyHttpServer{ServerName: lv_conf.Config().GetAppName()}
 	httpServer.HttpServer = &http.Server{
 		Addr:           "0.0.0.0:" + cast.ToString(port),
 		Handler:        InitGinRouter(contextPath),
@@ -128,9 +132,9 @@ func InitGinRouter(contextPath string) *gin.Engine {
 		Root:      "resources/template",
 		Extension: ".html",
 		Master:    "",
-		Partials:  lv_global.Config().GetPartials(),
-		Funcs:     template.FuncMap(lv_global.Config().GetFuncMap()),
-		CacheTpl:  lv_global.Config().IsCacheTpl(),
+		Partials:  lv_conf.Config().GetPartials(),
+		Funcs:     template.FuncMap(lv_conf.Config().GetFuncMap()),
+		CacheTpl:  lv_conf.Config().IsCacheTpl(),
 	})
 	// 注册业务路由
 	if len(router.GroupList) > 0 {

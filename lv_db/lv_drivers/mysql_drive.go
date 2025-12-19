@@ -1,53 +1,43 @@
 package lv_drivers
 
 import (
-	"fmt"
-
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 )
 
 type MySQLDriver struct {
-	config *DbConfig
-	gormDB *gorm.DB
 }
 
-func (d *MySQLDriver) GetGormDB() *gorm.DB {
-	return d.gormDB
+func (d *MySQLDriver) GetName() string {
+	return "mysql"
 }
 
-func (d *MySQLDriver) TestConnInstance() {
-	//TODO implement me
-	panic("implement me")
+func (d *MySQLDriver) TestConnInstance() error {
+	// 这里可以实现数据库连接测试逻辑
+	return nil
 }
 
-// 实现Driver接口
-func (d *MySQLDriver) Setup() (*gorm.DB, error) {
-	url := "%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local&timeout=5000ms"
-	url = fmt.Sprintf(url, d.config.User, d.config.Password, d.config.Host, d.config.Port, d.config.DbName)
+func (d *MySQLDriver) GetDefaultParams() map[string]string {
+	return map[string]string{
+		"parseTime":    "true",
+		"charset":      "utf8mb4",
+		"loc":          "Local",
+		"timeout":      "30s",
+		"readTimeout":  "30s",
+		"writeTimeout": "30s",
+	}
+}
 
-	// 添加选项处理
-	if len(d.config.Options) > 0 {
-		url += "&" + buildOptions(d.config.Options)
+func (d *MySQLDriver) Open(cfg *DbConfig) gorm.Dialector {
+	// 合并默认参数和自定义参数
+	params := d.GetDefaultParams()
+	for k, v := range cfg.Params {
+		params[k] = v
 	}
+	cfg.Params = params
 
-	db, err := gorm.Open(mysql.Open(url), &gorm.Config{
-		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true,
-		},
-	})
-	if err != nil {
-		panic("连接数据库失败" + err.Error())
-	}
-	sqlDB, err := d.gormDB.DB() //dr
-	if err != nil {
-		panic("连接数据库失败")
-	}
-	sqlDB.SetMaxIdleConns(5)
-	sqlDB.SetMaxOpenConns(50)
-	//e.GormSqlite.LogMode(true) // ====================打印sql
-	return db, err
+	url := cfg.RebuildUrl()
+	return mysql.Open(url)
 }
 
 //

@@ -1,10 +1,12 @@
 package lv_cache
 
 import (
+	"time"
+
 	"github.com/lostvip-com/lv_framework/lv_cache/lv_ram"
 	"github.com/lostvip-com/lv_framework/lv_cache/lv_redis"
+	"github.com/lostvip-com/lv_framework/lv_conf"
 	"github.com/lostvip-com/lv_framework/lv_global"
-	"time"
 )
 
 // 支持set、hashSet操作
@@ -27,7 +29,7 @@ var cacheClient ICache = nil //主数据库
 
 func GetCacheClient() ICache {
 	if cacheClient == nil {
-		var config = lv_global.Config()
+		var config = lv_conf.Config()
 		var cacheType = config.GetVipperCfg().GetString(lv_global.KEY_CACHE_TYPE)
 		if cacheType == "redis" {
 			cacheClient = lv_redis.GetInstance(0)

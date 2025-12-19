@@ -3,11 +3,12 @@ package lv_redis
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/lostvip-com/lv_framework/lv_conf"
 	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/redis/go-redis/v9"
-	"sync"
-	"time"
 )
 
 var (
@@ -115,6 +116,9 @@ func (rcc *RedisClient) Close() {
 		return
 	}
 }
-func (r RedisClient) Scan(cursor uint64, match string, count int64) ([]string, uint64, error) {
-	return r.client.Scan(context.TODO(), cursor, match, count).Result()
+func (rcc *RedisClient) Scan(cursor uint64, match string, count int64) ([]string, uint64, error) {
+	return rcc.client.Scan(context.TODO(), cursor, match, count).Result()
+}
+func (rcc *RedisClient) GetRedis() *redis.Client {
+	return rcc.client
 }

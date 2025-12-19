@@ -2,15 +2,16 @@ package lv_log_impl
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"strings"
+
 	"github.com/lostvip-com/lv_framework/lv_conf"
 	"github.com/lostvip-com/lv_framework/lv_global"
 	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"gopkg.in/natefinch/lumberjack.v2"
-	"io"
-	"os"
-	"strings"
 )
 
 type LvLogImpl struct {
@@ -19,9 +20,9 @@ type LvLogImpl struct {
 
 func InitLog(fileName string) *LvLogImpl {
 	e := new(LvLogImpl)
-	if lv_global.Config() == nil {
+	if lv_conf.Config() == nil {
 		cfg := new(lv_conf.CfgDefault)
-		lv_global.RegisterCfg(cfg)
+		lv_conf.RegisterCfg(cfg)
 	}
 	if e.Log == nil {
 		e.Log = logrus.New()
@@ -30,7 +31,7 @@ func InitLog(fileName string) *LvLogImpl {
 		DisableColors: true,
 		FullTimestamp: true,
 	})
-	level := lv_global.Config().GetLogLevel()
+	level := lv_conf.Config().GetLogLevel()
 	switch level {
 	case "":
 		e.Log.SetLevel(logrus.ErrorLevel)
@@ -50,9 +51,9 @@ func InitLog(fileName string) *LvLogImpl {
 	default:
 		panic("Log level is not support: " + level)
 	}
-	maxSize := lv_global.Config().GetValueStr("application.log.max-size")
-	maxBackups := lv_global.Config().GetValueStr("application.log.max-backups")
-	maxAge := lv_global.Config().GetValueStr("application.log.max-age")
+	maxSize := lv_conf.Config().GetValueStr("application.log.max-size")
+	maxBackups := lv_conf.Config().GetValueStr("application.log.max-backups")
+	maxAge := lv_conf.Config().GetValueStr("application.log.max-age")
 	if maxSize == "" {
 		maxSize = "200"
 	}
@@ -62,7 +63,7 @@ func InitLog(fileName string) *LvLogImpl {
 	if maxAge == "" {
 		maxAge = "7"
 	}
-	logPath := lv_file.GetCurrentPath() + "/" + lv_global.Config().GetValueStr("application.log.path")
+	logPath := lv_file.GetCurrentPath() + "/" + lv_conf.Config().GetValueStr("application.log.path")
 	err := lv_file.PathCreateIfNotExist(logPath)
 	if err != nil {
 		panic(err)
@@ -75,7 +76,7 @@ func InitLog(fileName string) *LvLogImpl {
 		Compress:   true,                   // disabled by default,是否需要压缩滚动日志, 使用的 gzip 压缩
 	}
 	var writers []io.Writer
-	output := lv_global.Config().GetValueStr("application.log.output")
+	output := lv_conf.Config().GetValueStr("application.log.output")
 	if strings.Contains(output, "stdout") { //只写控制台
 		writers = append(writers, os.Stdout)
 	}

@@ -14,12 +14,12 @@ import (
 // 当 error 不为 nil 时触发 panic
 // 对于当前请求不会再执行接下来的代码，并且返回指定格式的错误信息和错误码
 // 若 msg 为空，则默认为 error 中的内容
-func HasErrAndPanic(err error) {
+func IfErrPanic(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
-func IfErrPanic(err error) {
+func HasErrAndPanic(err error) {
 	if err != nil {
 		panic(err)
 	}

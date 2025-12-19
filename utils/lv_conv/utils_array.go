@@ -8,6 +8,15 @@ package lv_conv
 
 import "reflect"
 
+func Contains[T comparable](slice []T, item T) bool {
+	for _, v := range slice {
+		if v == item {
+			return true
+		}
+	}
+	return false
+}
+
 // IsArray checks whether given value is array/slice.
 // Note that it uses reflect internally implementing this feature.
 func IsArray(value interface{}) bool {

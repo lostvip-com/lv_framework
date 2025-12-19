@@ -2,6 +2,11 @@ package lv_conf
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"text/template"
+	"time"
+
 	"github.com/lostvip-com/lv_framework/lv_global"
 	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/lostvip-com/lv_framework/utils/lv_conv"
@@ -9,28 +14,45 @@ import (
 	"github.com/lostvip-com/lv_framework/utils/lv_net"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
-	"os"
-	"strings"
-	"text/template"
-	"time"
 )
 
-var appName string
-var defaultDB = ""
-var defaultDBDriver = ""
-
 type CfgDefault struct {
-	vipperCfg      *viper.Viper
-	proxyMap       map[string]string
-	proxyEnable    bool
-	cacheTpl       bool //默认不缓存模板，方便调试
-	contextPath    string
-	resourcesPath  string
-	logLevel       string
-	autoMigrate    string
-	sessionTimeout time.Duration
+	vipperCfg         *viper.Viper
+	AppName           string
+	DataSourceDefault string
+	proxyMap          map[string]string
+	proxyEnable       bool
+	cacheTpl          bool //默认不缓存模板，方便调试
+	contextPath       string
+	resourcesPath     string
+	logLevel          string
+	autoMigrate       string
+	sessionTimeout    time.Duration
 }
 
+// GetAllDataSources 获取配置文件中所有配置的数据源名称
+func (e *CfgDefault) GetAllDataSources() []string {
+	// 使用viper实例获取所有数据源配置
+	viperCfg := e.GetVipperCfg()
+	dataSourceNames := make([]string, 0)
+	dataSourceMap := make(map[string]bool)
+
+	// 从配置中获取所有以 "application.datasource." 开头且包含 ".url" 的配置键
+	for _, key := range viperCfg.AllKeys() {
+		if strings.HasPrefix(key, "application.datasource.") && strings.Contains(key, ".url") {
+			// 提取数据源名称，例如从 "application.datasource.db-sys.url" 中提取 "db-sys"
+			parts := strings.Split(key, ".")
+			if len(parts) >= 3 {
+				dataSourceName := parts[2]
+				if !dataSourceMap[dataSourceName] {
+					dataSourceMap[dataSourceName] = true
+					dataSourceNames = append(dataSourceNames, dataSourceName)
+				}
+			}
+		}
+	}
+	return dataSourceNames
+}
 func (e *CfgDefault) GetSessionTimeout(defaultTimeout time.Duration) time.Duration {
 	if e.sessionTimeout > 0 {
 		return e.sessionTimeout
@@ -51,20 +73,27 @@ func (e *CfgDefault) GetSessionTimeout(defaultTimeout time.Duration) time.Durati
 	return e.sessionTimeout
 }
 
-func (e *CfgDefault) GetDBNameDefault() string {
-	return defaultDB
+func (e *CfgDefault) GetDuration(key string, defaultDuration time.Duration) time.Duration {
+	timeoutStr := e.GetValueStr(lv_global.SESSION_TIMEOUT_KEY)
+	if timeoutStr == "" { // 设置一个长期的过期时间
+		lv_log.Warn("No Duration Configured! default:", defaultDuration)
+		return defaultDuration
+	} else {
+		timeout, err := time.ParseDuration(timeoutStr)
+		if err != nil {
+			lv_log.Error("time.ParseDuration(timeout) error:", key, err)
+			return defaultDuration
+		}
+		return timeout
+	}
 }
-func (e *CfgDefault) SetDBNameDefault(dbName string) bool {
-	defaultDB = dbName
-	return true
+func (e *CfgDefault) GetDatasourceDefault() string {
+	if e.DataSourceDefault == "" {
+		e.DataSourceDefault = e.GetValueStr("application.datasource.default")
+	}
+	return e.DataSourceDefault
 }
-func (e *CfgDefault) GetDBDriverDefault() string {
-	return defaultDBDriver
-}
-func (e *CfgDefault) SetDBDriverDefault(driverName string) bool {
-	defaultDBDriver = driverName
-	return true
-}
+
 func (e *CfgDefault) GetResourcesPath() string {
 	if e.resourcesPath == "" {
 		e.resourcesPath = e.GetValueStr("application.resources-path")
@@ -151,13 +180,15 @@ func (e *CfgDefault) GetBool(key string) bool {
 		return false
 	}
 }
-func (e *CfgDefault) GetInt(key string) int {
+func (e *CfgDefault) GetInt(key string, defaultV int) int {
 	if e.vipperCfg == nil {
 		e.LoadConf()
 	}
 	val := cast.ToString(e.vipperCfg.Get(key))
-	val = e.parseVal(val)
-	return cast.ToInt(val)
+	if val == "" {
+		return defaultV
+	}
+	return cast.ToInt(e.parseVal(val))
 }
 func (e *CfgDefault) parseVal(val string) string {
 	if strings.HasPrefix(val, "$") { //存在动态表达式
@@ -272,35 +303,29 @@ func (e *CfgDefault) GetConf(key string) string {
 }
 
 func (e *CfgDefault) GetAppName() string {
-	if appName == "" {
-		appName = e.GetValueStr("application.name")
-		if appName == "" {
-			appName = "lostvip"
-		}
+	if e.AppName == "" {
+		e.AppName = e.GetValueStr("application.name")
 	}
-	return appName
+	return e.AppName
 }
 func (e *CfgDefault) GetDriver(dbName string) string {
 	key := fmt.Sprintf("application.datasource.%s.driver", dbName)
 	driver := e.GetValueStr(key)
-	if driver == "" {
-		driver = defaultDBDriver
-	}
 	return driver
 }
 func (e *CfgDefault) GetDBUrl(dbName string) string {
 	key := fmt.Sprintf("application.datasource.%s.url", dbName)
-	driver := e.GetValueStr(key)
-	if driver == "" {
-		driver = defaultDB
+	url := e.GetValueStr(key)
+	if url == "" {
+		url = e.GetDBUrlDefault()
 	}
-	return driver
+	return url
 }
 func (e *CfgDefault) GetDriverDefault() string {
-	return e.GetDriver(defaultDBDriver)
+	return e.GetDriver(e.GetDatasourceDefault())
 }
 func (e *CfgDefault) GetDBUrlDefault() string {
-	return e.GetDBUrl(defaultDB)
+	return e.GetDBUrl(e.GetDatasourceDefault())
 }
 
 // IsDebug todo
@@ -363,7 +388,6 @@ func (e *CfgDefault) GetProxyMap() map[string]string {
 }
 
 func (e *CfgDefault) LoadProxyInfo() map[string]string {
-	fmt.Println("######### 加载代理配置信息 start #############")
 	if !e.IsProxyEnable() {
 		return nil
 	}
@@ -376,8 +400,7 @@ func (e *CfgDefault) LoadProxyInfo() map[string]string {
 		e.proxyMap[key] = hostPort
 	}
 	e.proxyEnable = e.GetBool("application.proxy.enable")
-	fmt.Println("application.proxy:", e.proxyMap)
-	fmt.Println("######### 加载代理配置信息 end #############")
+	lv_log.Info("application.proxy:", e.proxyMap)
 	return e.proxyMap
 }
 

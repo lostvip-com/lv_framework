@@ -16,7 +16,6 @@ package gintemplate
 import (
 	"bytes"
 	"fmt"
-	"github.com/lostvip-com/lv_framework/lv_global"
 	"html/template"
 	"io"
 	"net/http"
@@ -24,6 +23,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/lostvip-com/lv_framework/lv_conf"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/render"
@@ -74,7 +75,7 @@ func New(config TemplateConfig) *TemplateEngine {
 }
 
 func Default() *TemplateEngine {
-	cachePage := lv_global.Config().IsCacheTpl()
+	cachePage := lv_conf.Config().IsCacheTpl()
 	DefaultConfig := TemplateConfig{
 		Root:      "views",
 		Extension: ".html",

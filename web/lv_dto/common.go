@@ -25,12 +25,13 @@ type CommonRes struct {
 	Data interface{} `json:"data"` //数据内容
 }
 
-func (r *CommonRes) GetCode() int  {
+func (r *CommonRes) GetCode() int {
 	return r.Code
 }
-func (r *CommonRes) GetMsg() string  {
+func (r *CommonRes) GetMsg() string {
 	return r.Msg
 }
+
 // 验证码响应
 type CaptchaRes struct {
 	Code           int         `json:"code"` //响应编码 0 成功 500 错误 403 无权限
@@ -38,6 +39,7 @@ type CaptchaRes struct {
 	Img            interface{} `json:"img"`  //数据内容
 	Uuid           string      `json:"uuid"` //验证码ID
 	CaptchaEnabled bool        `json:"captchaEnabled"`
+	Type           string      `json:"type"`
 }
 
 // 通用分页表格响应

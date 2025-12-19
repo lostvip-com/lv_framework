@@ -61,18 +61,6 @@ func Exec(db *gorm.DB, dmlSql string, req map[string]any) (int64, error) {
 	}
 }
 
-func GetOneMap(db *gorm.DB, limitSql string, req any, isCamel bool) (result map[string]any, err error) {
-	list, err := ListMap(db, limitSql, req, isCamel)
-	if err == nil {
-		if list == nil || len(list) == 0 {
-			err = gorm.ErrRecordNotFound
-		} else {
-			result = list[0]
-		}
-	}
-	return result, err
-}
-
 func toCamelMap(result map[string]any) map[string]any {
 	mp := make(map[string]any)
 	for k, v := range result {
@@ -456,4 +444,37 @@ func ListOneColStr(db *gorm.DB, sqlQuery string, params any) ([]string, error) {
 		}
 	}
 	return arr, err
+}
+
+// GetOneCol 获取一列
+func GetOneCol[T any](db *gorm.DB, sqlQuery string, params ...any) ([]T, error) {
+	rows, err := db.Raw(sqlQuery, params...).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []T
+	for rows.Next() {
+		var val T
+		err := rows.Scan(&val)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, val)
+	}
+	return results, nil
+}
+
+// GetOneRow 获取一行
+func GetOneRow(db *gorm.DB, limitSql string, req any, isCamel bool) (result map[string]any, err error) {
+	list, err := ListMap(db, limitSql, req, isCamel)
+	if err == nil {
+		if list == nil || len(list) == 0 {
+			err = gorm.ErrRecordNotFound
+		} else {
+			result = list[0]
+		}
+	}
+	return result, err
 }
