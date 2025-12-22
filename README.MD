@@ -13,7 +13,7 @@
 * 支持在yaml文件中使用表达式从环境变量中取值，便于切换生产、开发、测试环境参数（模仿springboot）,如：
 ~~~
     host: ${REDIS_HOST:lostvip.com}
-    如: 环境变量添加 REDIS_HOST=192.168.88.114;REDIS_PORT=6379;REDIS_PWD=dpctest
+    如: 环境变量添加 REDIS_HOST=127.0.0.1;REDIS_PORT=6379;REDIS_PWD=test
 ~~~
 
 ## 核心技术及组件
