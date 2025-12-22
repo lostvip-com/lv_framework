@@ -90,26 +90,21 @@ func (e *Engine) GetDB(name string) *gorm.DB {
 		return db
 	}
 
-	// 获取或创建该数据源的once对象，需要加锁保护
+	// 加锁保护初始化过程
 	e.mu.Lock()
-	once, ok := e.onceMap[name]
-	if !ok {
-		once = &sync.Once{}
-		e.onceMap[name] = once
+	defer e.mu.Unlock()
+
+	// 再次检查，防止在加锁前已经被其他goroutine初始化
+	if db, ok := e.gormMap[name]; ok {
+		return db
 	}
-	e.mu.Unlock()
-	// 使用sync.Once确保只初始化一次
-	var db *gorm.DB
-	var err error
-	once.Do(func() {
-		ds := e.createDataSourceConfig(name)
-		db, err = e.CreateAndRegisterDB(ds)
-		if err != nil {
-			panic(err)
-		}
-		// 初始化完成后存入map，后续读取无需加锁
-		e.gormMap[name] = db
-	})
+
+	// 初始化数据源
+	ds := e.createDataSourceConfig(name)
+	db, err := e.CreateAndRegisterDB(ds)
+	if err != nil {
+		panic(err)
+	}
 
 	return db
 }
@@ -198,14 +193,13 @@ func (e *Engine) CloseAllConnections() error {
 
 // CreateAndRegisterDB 根据数据源配置创建并注册GORM实例
 func (e *Engine) CreateAndRegisterDB(dataSource *DataSource) (*gorm.DB, error) {
+	// 调用者必须确保已经持有了锁，这里不再加锁
 	// 注册数据源配置
-	e.mu.Lock()
 	e.dataSources[dataSource.Name] = dataSource
 	// 确保onceMap中有对应的条目
 	if _, ok := e.onceMap[dataSource.Name]; !ok {
 		e.onceMap[dataSource.Name] = &sync.Once{}
 	}
-	e.mu.Unlock()
 	
 	// 获取对应方言
 	dialector, err := lv_dialector.GetDialector(dataSource.Driver)
@@ -272,8 +266,8 @@ func (e *Engine) CreateAndRegisterDB(dataSource *DataSource) (*gorm.DB, error) {
 		return nil, fmt.Errorf("数据库连接测试失败: %v", err)
 	}
 
-	// 注册到引擎
-	e.RegisterDB(dataSource.Name, gormDB)
+	// 注册到引擎 - 由于已经持有锁，直接操作map
+	e.gormMap[dataSource.Name] = gormDB
 
 	return gormDB, nil
 }
@@ -287,7 +281,9 @@ func (engine *Engine) InitDataSources() {
 	for _, dsName := range dataSourceNames {
 		ds := engine.createDataSourceConfig(dsName)
 		// 使用引擎的CreateAndRegisterDB方法创建并注册数据库连接
+		engine.mu.Lock()
 		_, err := engine.CreateAndRegisterDB(ds)
+		engine.mu.Unlock()
 		if err != nil {
 			panic(fmt.Sprintf("初始化数据源 [%s] 失败: %v", dsName, err))
 		}
