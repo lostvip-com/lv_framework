@@ -19,36 +19,31 @@ func Contains[T comparable](slice []T, item T) bool {
 
 // IsArray checks whether given value is array/slice.
 // Note that it uses reflect internally implementing this feature.
-func IsArray(value interface{}) bool {
-	rv := reflect.ValueOf(value)
-	kind := rv.Kind()
-	if kind == reflect.Ptr {
-		rv = rv.Elem()
-		kind = rv.Kind()
-	}
-	switch kind {
-	case reflect.Array, reflect.Slice:
-		return true
-	default:
-		return false
-	}
+// It's designed to handle any input type and determine its nature at runtime.
+func IsCollection(value interface{}) bool {
+	 rv := reflect.ValueOf(value)
+	 kind := rv.Kind()
+	 if kind == reflect.Ptr {
+		 rv = rv.Elem()
+		 kind = rv.Kind()
+	 }
+	 switch kind {
+	 case reflect.Array, reflect.Slice:
+		 return true
+	 default:
+		 return false
+	 }
 }
 
-func RemoveOne(nums []int, val int) []int {
-	newNums := make([]int, 0)
-	for _, num := range nums {
-		if num != val {
-			newNums = append(newNums, num)
-		}
-	}
-	return newNums
-}
-func Remove(slice []any, element any) []any {
-	var newSlice []any
-	for _, v := range slice {
-		if v != element {
-			newSlice = append(newSlice, v)
-		}
-	}
-	return newSlice
+// Remove 从切片中删除所有等于 element 的元素（泛型版本）
+// 支持任何可比较类型的切片，使用原地删除提高内存效率
+func Remove[T comparable](slice []T, element T) []T {
+    idx := 0 // 慢指针，指向当前有效元素的下一个位置
+    for _, v := range slice {
+        if v != element {
+            slice[idx] = v // 将不等于目标元素的值移动到前面
+            idx++
+        }
+    }
+    return slice[:idx] // 返回包含有效元素的切片部分
 }

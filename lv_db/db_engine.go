@@ -32,7 +32,8 @@ type DataSource struct {
 type Engine struct {
 	dataSources map[string]*DataSource
 	gormMap     map[string]*gorm.DB
-	mu          sync.RWMutex // 加锁保护并发访问
+	onceMap     map[string]*sync.Once // 用于确保每个数据源只初始化一次
+	mu          sync.RWMutex          // 只在初始化和修改时使用
 	defaultName string
 }
 
@@ -42,7 +43,6 @@ var (
 )
 
 func init() {
-	fmt.Println("-----init orm-------")
 }
 
 // GetInstance 初始化数据操作引擎（单例模式）
@@ -51,6 +51,7 @@ func GetInstance() *Engine {
 		instance = new(Engine)
 		instance.gormMap = make(map[string]*gorm.DB)
 		instance.dataSources = make(map[string]*DataSource)
+		instance.onceMap = make(map[string]*sync.Once)
 	})
 	return instance
 }
@@ -60,19 +61,21 @@ func (e *Engine) RegisterDB(name string, db *gorm.DB) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.gormMap[name] = db
+	// 确保onceMap中有对应的条目，防止重复初始化
+	if _, ok := e.onceMap[name]; !ok {
+		e.onceMap[name] = &sync.Once{}
+	}
 }
 
 // GetDataSource 获取数据源配置
 func (e *Engine) GetDataSource(name string) *DataSource {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
+	// 系统启动后数据源配置不会变更，无需加锁
 	return e.dataSources[name]
 }
 
 // GetAllDataSources 获取所有数据源配置
 func (e *Engine) GetAllDataSources() map[string]*DataSource {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
+	// 系统启动后数据源配置不会变更，无需加锁
 	result := make(map[string]*DataSource)
 	for k, v := range e.dataSources {
 		result[k] = v
@@ -82,41 +85,53 @@ func (e *Engine) GetAllDataSources() map[string]*DataSource {
 
 // GetDB 根据名称获取数据库连接
 func (e *Engine) GetDB(name string) *gorm.DB {
-	e.mu.RLock()
-	db := e.gormMap[name]
-	e.mu.RUnlock()
-	
-	if db == nil {
-		e.mu.Lock()
-		defer e.mu.Unlock()
-		// 再次检查，防止并发情况下已经被其他goroutine创建
-		if db = e.gormMap[name]; db == nil {
-			ds := e.createDataSourceConfig(name)
-			gdb, err := e.CreateAndRegisterDB(ds)
-			if err != nil {
-				panic(err)
-			}
-			e.gormMap[name] = gdb
-			db = gdb
-		}
+	// 快速路径：直接从map中读取，不加锁
+	if db, ok := e.gormMap[name]; ok {
+		return db
 	}
+
+	// 获取或创建该数据源的once对象，需要加锁保护
+	e.mu.Lock()
+	once, ok := e.onceMap[name]
+	if !ok {
+		once = &sync.Once{}
+		e.onceMap[name] = once
+	}
+	e.mu.Unlock()
+	// 使用sync.Once确保只初始化一次
+	var db *gorm.DB
+	var err error
+	once.Do(func() {
+		ds := e.createDataSourceConfig(name)
+		db, err = e.CreateAndRegisterDB(ds)
+		if err != nil {
+			panic(err)
+		}
+		// 初始化完成后存入map，后续读取无需加锁
+		e.gormMap[name] = db
+	})
+
 	return db
 }
 
 // SetDefaultName 设置默认数据库名称
 func (e *Engine) SetDefaultName(name string) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
 	e.defaultName = name
 }
 
 // GetDefault 获取默认数据库连接
 func (e *Engine) GetDefault() *gorm.DB {
-	e.mu.RLock()
+	// 快速路径：先无锁读取，减少锁竞争
+	if e.defaultName != "" {
+		return e.GetDB(e.defaultName)
+	}
+
+	// 需要设置默认名称时才加锁
+	e.mu.Lock()
 	if e.defaultName == "" {
 		e.defaultName = lv_conf.Config().GetDatasourceDefault()
 	}
-	e.mu.RUnlock()
+	e.mu.Unlock()
 	return e.GetDB(e.defaultName)
 }
 
@@ -158,32 +173,38 @@ func (e *Engine) CloseAllConnections() error {
 			err = errDB
 		}
 	}
+	// 清空连接池和onceMap，确保下次获取连接时能重新初始化
 	e.gormMap = make(map[string]*gorm.DB)
+	e.onceMap = make(map[string]*sync.Once)
 	return err
 }
 
 // RefreshConnection 刷新指定数据库连接
-func (e *Engine) RefreshConnection(name string, newDB *gorm.DB) error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	// 关闭旧连接
-	if oldDB, exists := e.gormMap[name]; exists && oldDB != nil {
-		sqlDB, err := oldDB.DB()
-		if err != nil {
-			return err
-		}
-		sqlDB.Close()
-	}
-	// 设置新连接
-	e.gormMap[name] = newDB
-	return nil
-}
+// func (e *Engine) RefreshConnection(name string, newDB *gorm.DB) error {
+// 	e.mu.Lock()
+// 	defer e.mu.Unlock()
+// 	// 关闭旧连接
+// 	if oldDB, exists := e.gormMap[name]; exists && oldDB != nil {
+// 		sqlDB, err := oldDB.DB()
+// 		if err != nil {
+// 			return err
+// 		}
+// 		sqlDB.Close()
+// 	}
+// 	// 设置新连接
+// 	e.gormMap[name] = newDB
+// 	return nil
+// }
 
 // CreateAndRegisterDB 根据数据源配置创建并注册GORM实例
 func (e *Engine) CreateAndRegisterDB(dataSource *DataSource) (*gorm.DB, error) {
 	// 注册数据源配置
 	e.mu.Lock()
 	e.dataSources[dataSource.Name] = dataSource
+	// 确保onceMap中有对应的条目
+	if _, ok := e.onceMap[dataSource.Name]; !ok {
+		e.onceMap[dataSource.Name] = &sync.Once{}
+	}
 	e.mu.Unlock()
 	// 获取对应驱动
 	driver, err := lv_drivers.GetDriver(dataSource.Driver)
