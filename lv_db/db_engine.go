@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/lostvip-com/lv_framework/lv_conf"
-	"github.com/lostvip-com/lv_framework/lv_db/lv_drivers"
+	"github.com/lostvip-com/lv_framework/lv_db/lv_dialector"
 	"github.com/lostvip-com/lv_framework/lv_global"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -206,20 +206,25 @@ func (e *Engine) CreateAndRegisterDB(dataSource *DataSource) (*gorm.DB, error) {
 		e.onceMap[dataSource.Name] = &sync.Once{}
 	}
 	e.mu.Unlock()
-	// 获取对应驱动
-	driver, err := lv_drivers.GetDriver(dataSource.Driver)
+	
+	// 获取对应方言
+	dialector, err := lv_dialector.GetDialector(dataSource.Driver)
 	if err != nil {
-		return nil, fmt.Errorf("找不到驱动类型: %s, 错误: %v", dataSource.Driver, err)
+		return nil, fmt.Errorf("找不到方言: %s, 错误: %v", dataSource.Driver, err)
 	}
 
-	// 合并默认参数和自定义参数
-	params := driver.GetDefaultParams()
+	// 获取默认参数
+	params := make(map[string]string)
+	if provider, exists := lv_dialector.DefaultParamsProvider[dataSource.Driver]; exists {
+		params = provider.GetDefaultParams()
+	}
+	// 合并自定义参数
 	for k, v := range dataSource.Params {
 		params[k] = v
 	}
 
 	// 创建数据库配置
-	dbCfg := lv_drivers.DbConfig{
+	dbCfg := lv_dialector.DbConfig{
 		DriverType:   dataSource.Driver,
 		Url:          dataSource.URL,
 		Params:       params,
@@ -232,8 +237,11 @@ func (e *Engine) CreateAndRegisterDB(dataSource *DataSource) (*gorm.DB, error) {
 		LoggerLevel:  dataSource.LoggerLevel,
 	}
 
-	// 打开数据库连接
-	dialector := driver.Open(&dbCfg)
+	// 构建完整URL
+	url := dbCfg.RebuildUrl()
+
+	// 创建gorm方言实例
+	gormDialector := dialector.NewDialector(url)
 
 	// 配置GORM
 	gormCfg := &gorm.Config{
@@ -242,7 +250,7 @@ func (e *Engine) CreateAndRegisterDB(dataSource *DataSource) (*gorm.DB, error) {
 	}
 
 	// 创建GORM实例
-	gormDB, err := gorm.Open(dialector, gormCfg)
+	gormDB, err := gorm.Open(gormDialector, gormCfg)
 	if err != nil {
 		return nil, fmt.Errorf("数据库连接失败: %v", err)
 	}
@@ -324,11 +332,24 @@ func (engine *Engine) createDataSourceConfig(dsName string) *DataSource {
 	return ds
 }
 
-func (e *Engine) RegisterDriver(name string, getDriver func() lv_drivers.Driver) {
-	lv_drivers.RegisterDriver(name, getDriver)
+// RegisterDialector 注册数据库方言
+func (e *Engine) RegisterDialector(name string, getDialector func() lv_dialector.Dialector) {
+	lv_dialector.RegisterDialector(name, getDialector)
 }
-func (e *Engine) IsDriverRegistered() bool {
-	return len(lv_drivers.DriverRegistry) > 0
+
+// RegisterDefaultDialector 注册默认数据库方言
+func (e *Engine) RegisterDefaultDialector(name string, getDialector func() lv_dialector.Dialector) {
+	lv_dialector.RegisterDefaultDialector(name, getDialector)
+}
+
+// IsDialectorRegistered 检查方言是否已注册
+func (e *Engine) IsDialectorRegistered(name string) bool {
+	return lv_dialector.IsDialectorRegistered(name)
+}
+
+// GetRegisteredDialectors 获取所有已注册的方言名称
+func (e *Engine) GetRegisteredDialectors() []string {
+	return lv_dialector.GetRegisteredDialectors()
 }
 
 // ShutdownDatabase 关闭所有数据库连接

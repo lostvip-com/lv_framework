@@ -1,30 +1,30 @@
-package lv_drivers
+package lv_dialector
 
 import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-type PostgreSQLDriver struct {
+type PostgreSQLDialector struct {
 }
 
-func (d *PostgreSQLDriver) GetName() string {
+func (d *PostgreSQLDialector) GetName() string {
 	return "postgres"
 }
 
-func (d *PostgreSQLDriver) TestConnInstance() error {
+func (d *PostgreSQLDialector) TestConnInstance() error {
 	// 这里可以实现数据库连接测试逻辑
 	return nil
 }
 
-func (d *PostgreSQLDriver) GetDefaultParams() map[string]string {
+func (d *PostgreSQLDialector) GetDefaultParams() map[string]string {
 	return map[string]string{
 		"TimeZone":        "Asia/Shanghai",
 		"connect_timeout": "30",
 	}
 }
 
-func (d *PostgreSQLDriver) Open(dbCfg *DbConfig) gorm.Dialector {
+func (d *PostgreSQLDialector) Open(dbCfg *DbConfig) gorm.Dialector {
 	// 合并默认参数和自定义参数
 	params := d.GetDefaultParams()
 	for k, v := range dbCfg.Params {

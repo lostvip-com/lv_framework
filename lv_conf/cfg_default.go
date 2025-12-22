@@ -407,3 +407,7 @@ func (e *CfgDefault) LoadProxyInfo() map[string]string {
 func (e *CfgDefault) GetPartials() []string {
 	return []string{}
 } //
+
+func (e *CfgDefault) InitDatabaseDialector() error {
+	panic("implement me")
+}

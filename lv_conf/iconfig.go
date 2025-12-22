@@ -55,4 +55,5 @@ type IConfig interface {
 	GetGrpcPort() string
 	GetHost() string
 	GetSessionTimeout(defaultTimeout time.Duration) time.Duration
+	InitDatabaseDialector() error
 }
