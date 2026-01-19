@@ -185,8 +185,9 @@ func (rcc *RamCacheClient) HGetAll(key string) (map[string]string, error) {
 	return mp, nil
 }
 
-func (rcc *RamCacheClient) Close() {
+func (rcc *RamCacheClient) Close() error{
 	rcc.c.Flush()
+	return nil
 }
 
 // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -247,4 +248,60 @@ func (rcc *RamCacheClient) HMSet(pk string, m map[string]any, duration time.Dura
 		rcc.Expire(pk+":"+k, duration)
 	}
 	return nil
+}
+// 支持reids的key匹配规则
+func (rcc *RamCacheClient) CountKeysByPattern(pattern string) (int64, error) {
+	if pattern == "" {
+		return 0, KeyNull
+	}
+
+	var count int64 = 0
+
+	// 遍历内存中的所有键
+	for key := range rcc.c.Items() {
+		// 检查键是否匹配模式
+		if matchPattern(key, pattern) {
+			count++
+		}
+	}
+
+	return count, nil
+}
+
+// matchPattern 检查键是否匹配模式
+func matchPattern(key, pattern string) bool {
+	// 支持 * 和 ?
+	return matchPatternRecursive(key, pattern)
+}
+
+// matchPatternRecursive 递归匹配模式
+func matchPatternRecursive(key, pattern string) bool {
+	if pattern == "" {
+		return key == ""
+	}
+
+	// 检查第一个字符
+	switch pattern[0] {
+	case '*':
+		// * 匹配任意数量的字符
+		for len(key) >= 0 {
+			if matchPatternRecursive(key, pattern[1:]) {
+				return true
+			}
+			key = key[1:]
+		}
+		return false
+	case '?':
+		// ? 匹配任意单个字符
+		if len(key) == 0 {
+			return false
+		}
+		return matchPatternRecursive(key[1:], pattern[1:])
+	default:
+		// 普通字符匹配
+		if len(key) == 0 || key[0] != pattern[0] {
+			return false
+		}
+		return matchPatternRecursive(key[1:], pattern[1:])
+	}
 }

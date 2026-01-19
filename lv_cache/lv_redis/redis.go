@@ -39,27 +39,42 @@ func NewRedisClient(indexDb int) *RedisClient {
 		Password: password, // 没有密码，默认值
 		DB:       indexDb,  // 默认DB 0
 	})
-	redisClient = new(RedisClient)
-	redisClient.client = rdb
-	if redisClient.client.Ping(context.Background()).Val() == "" {
-		msg := ` 
-			  ------------>连接 reids 错误：
-			  无法链接到redis!!!! 检查相关配置:
-			  host: %v
-			  port: %v
-			  password: %v
+
+	redisClient := &RedisClient{client: rdb}
+
+	// 测试连接
+	if _, err := redisClient.Ping(context.Background()); err != nil {
+		msg := `
+              ------------>连接 Redis 错误：
+              无法链接到 Redis!!!! 检查相关配置:
+              host: %v
+              port: %v
+              password: %v
              `
-		host := conf.GetValueStr("application.redis.host")
-		lv_log.Error(fmt.Sprintf(msg, host, conf.GetValueStr("application.redis.port"), conf.GetValueStr("application.redis.password")))
-		panic("redis 错误:" + host + " port:" + port)
+		lv_log.Error(fmt.Sprintf(msg, addr, port, password))
+		panic(fmt.Sprintf("Redis 错误: host: %v port: %v", addr, port))
 	}
+
 	return redisClient
+}
+
+func (rcc *RedisClient) Ping(ctx context.Context) (string, error) {
+	return rcc.client.Ping(ctx).Result()
 }
 
 func (rcc *RedisClient) HMSet(key string, mp map[string]any, expiration time.Duration) error {
 	err := rcc.client.HSet(context.Background(), key, mp).Err()
-	err = rcc.client.Expire(context.Background(), key, expiration).Err()
-	return err
+	if err != nil {
+		lv_log.Error(fmt.Sprintf("HMSet error: %v", err))
+		return err
+	}
+	if expiration > 0 {
+		if err := rcc.client.Expire(context.Background(), key, expiration).Err(); err != nil {
+			lv_log.Error(fmt.Sprintf("Expire error: %v", err))
+			return err
+		}
+	}
+	return nil
 }
 
 func (rcc *RedisClient) Expire(key string, duration time.Duration) error {
@@ -71,31 +86,47 @@ func (rcc *RedisClient) Exists(key string) (int64, error) {
 }
 
 func (rcc *RedisClient) Set(key string, value interface{}, expiration time.Duration) error {
-	rcc.client.Set(context.Background(), key, value, expiration)
+	if err := rcc.client.Set(context.Background(), key, value, expiration).Err(); err != nil {
+		lv_log.Error(fmt.Sprintf("Set error: %v", err))
+		return err
+	}
 	return nil
 }
 
-func (rcc *RedisClient) Get(key string) (data string, err error) {
-	data, err = rcc.client.Get(context.Background(), key).Result()
-	return data, err
+func (rcc *RedisClient) Get(key string) (string, error) {
+	data, err := rcc.client.Get(context.Background(), key).Result()
+	if err != nil {
+		lv_log.Error(fmt.Sprintf("Get error: %v", err))
+		return "", err
+	}
+	return data, nil
 }
 
 func (rcc *RedisClient) Del(keys ...string) error {
-	var err error = nil
 	for _, key := range keys {
-		err = rcc.client.Del(context.Background(), key).Err()
+		if err := rcc.client.Del(context.Background(), key).Err(); err != nil {
+			lv_log.Error(fmt.Sprintf("Del error: %v", err))
+			return err
+		}
 	}
-	return err
+	return nil
 }
 
 func (rcc *RedisClient) HSet(key string, values ...interface{}) error {
-	err := rcc.client.HSet(context.Background(), key, values...).Err()
-	return err
+	if err := rcc.client.HSet(context.Background(), key, values...).Err(); err != nil {
+		lv_log.Error(fmt.Sprintf("HSet error: %v", err))
+		return err
+	}
+	return nil
 }
 
 func (rcc *RedisClient) HGet(key, field string) (string, error) {
 	data, err := rcc.client.HGet(context.Background(), key, field).Result()
-	return data, err
+	if err != nil {
+		lv_log.Error(fmt.Sprintf("HGet error: %v", err))
+		return "", err
+	}
+	return data, nil
 }
 
 func (rcc *RedisClient) HDel(key string, fields ...string) error {
@@ -110,15 +141,41 @@ func (rcc *RedisClient) Execute(script string, keys []string, args ...interface{
 	return rcc.client.Eval(context.TODO(), script, keys, args).Result()
 }
 
-func (rcc *RedisClient) Close() {
-	err := rcc.client.Close()
-	if err != nil {
-		return
-	}
+func (rcc *RedisClient) Close() error {
+	return rcc.client.Close()
 }
+
 func (rcc *RedisClient) Scan(cursor uint64, match string, count int64) ([]string, uint64, error) {
 	return rcc.client.Scan(context.TODO(), cursor, match, count).Result()
 }
+
 func (rcc *RedisClient) GetRedis() *redis.Client {
 	return rcc.client
+}
+
+func (rcc *RedisClient) CountKeysByPattern(pattern string) (int64, error) {
+	var cursor uint64 = 0
+	var count int64 = 0
+
+	for {
+		var keys []string
+		var err error
+
+		// 调用 SCAN 命令
+		keys, cursor, err = rcc.Scan(cursor, pattern, 0)
+		if err != nil {
+			lv_log.Error(fmt.Sprintf("Scan error: %v", err))
+			return 0, err
+		}
+
+		// 更新计数
+		count += int64(len(keys))
+
+		// 如果游标为 0，表示遍历完成
+		if cursor == 0 {
+			break
+		}
+	}
+
+	return count, nil
 }

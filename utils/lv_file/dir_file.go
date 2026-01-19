@@ -4,10 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/lostvip-com/lv_framework/lv_log"
 )
 
 const (
@@ -235,4 +238,49 @@ func GetCallerPath() (string, error) {
 		return "", errors.New("Error getting caller information")
 	}
 	return absProjectDir, err
+}
+
+// ClearDir 删除目录下所有文件（保留目录结构）
+func ClearDir(dir string) error {
+	// 基础安全检查
+	if dir == "" || dir == "/" || dir == "." {
+		return fmt.Errorf("危险：不能删除根目录或当前目录")
+	}
+
+	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return fmt.Errorf("访问失败 %s: %w", path, err)
+		}
+		if !d.IsDir() {
+			if err := os.Remove(path); err != nil {
+				return fmt.Errorf("删除失败 %s: %w", path, err)
+			}
+			lv_log.Info("已删除: %s\n", path)
+		}
+		return nil
+	})
+}
+
+// ClearDirFile 删除目录下所有文件（保留目录结构）
+func ClearDirFile(dir, ext string) error {
+	// 基础安全检查
+	if dir == "" || dir == "/" || dir == "." {
+		return fmt.Errorf("危险：不能删除根目录或当前目录")
+	}
+
+	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return fmt.Errorf("访问失败 %s: %w", path, err)
+		}
+		if !d.IsDir() {
+			if filepath.Ext(path) != ext {
+				return nil
+			}
+			if err := os.Remove(path); err != nil {
+				return fmt.Errorf("删除失败 %s: %w", path, err)
+			}
+			lv_log.Info("已删除: %s\n", path)
+		}
+		return nil
+	})
 }

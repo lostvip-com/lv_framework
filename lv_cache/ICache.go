@@ -21,8 +21,9 @@ type ICache interface {
 	HDel(key string, fields ...string) error
 	HGetAll(key string) (map[string]string, error)
 	Exists(key string) (int64, error)
-	Close()
+	Close() error
 	Expire(key string, duration time.Duration) error
+	CountKeysByPattern(pattern string) (int64, error)
 }
 
 var cacheClient ICache = nil //主数据库
