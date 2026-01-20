@@ -305,3 +305,38 @@ func matchPatternRecursive(key, pattern string) bool {
 		return matchPatternRecursive(key[1:], pattern[1:])
 	}
 }
+
+func (rcc *RamCacheClient) GetKeysPage(pattern string, page int, pageSize int) (keys []string, total int, err error) {
+	if pattern == "" {
+		return nil, 0, KeyNull
+	}
+
+	var allKeys []string
+
+	// 遍历内存中的所有键，收集匹配的键
+	for key := range rcc.c.Items() {
+		if matchPattern(key, pattern) {
+			allKeys = append(allKeys, key)
+		}
+	}
+
+	total = len(allKeys)
+	if total == 0 {
+		return []string{}, 0, nil
+	}
+
+	start := (page - 1) * pageSize
+	if start < 0 {
+		start = 0
+	}
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+
+	if start >= total {
+		return []string{}, total, nil
+	}
+
+	return allKeys[start:end], total, nil
+}

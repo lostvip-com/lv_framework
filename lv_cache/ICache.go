@@ -24,6 +24,7 @@ type ICache interface {
 	Close() error
 	Expire(key string, duration time.Duration) error
 	CountKeysByPattern(pattern string) (int64, error)
+	GetKeysPage(pattern string, page int, pageSize int) (keys []string, total int, err error)
 }
 
 var cacheClient ICache = nil //主数据库

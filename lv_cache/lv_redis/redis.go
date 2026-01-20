@@ -179,3 +179,69 @@ func (rcc *RedisClient) CountKeysByPattern(pattern string) (int64, error) {
 
 	return count, nil
 }
+
+func (rcc *RedisClient) GetKeysPage(pattern string, page int, pageSize int) (keys []string, total int, err error) {
+	// 先获取总数
+	total64, err := rcc.CountKeysByPattern(pattern)
+	if err != nil {
+		return nil, 0, err
+	}
+	total = int(total64)
+
+	if total == 0 {
+		return []string{}, 0, nil
+	}
+
+	start := (page - 1) * pageSize
+	if start < 0 {
+		start = 0
+	}
+	if start >= total {
+		return []string{}, total, nil
+	}
+
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+	//1. 去掉预分配：改为 var result []string，slice 长度完全由实际数据决定
+	//2. SCAN count 动态调整：pageSize * 2，最少 100。这样：
+	//- 小页码（如 pageSize=10）时用 100，减少往返次数
+	//- 大页码（如 pageSize=500）时用 1000，提高效率
+	//SCAN 的 count 参数只是"建议"值，Redis 可能返回更多或更少的 key。
+	// 根据 pageSize 计算 SCAN 的 count 参数
+	scanCount := int64(pageSize * 2)
+	if scanCount < 100 {
+		scanCount = 100
+	}
+
+	// 只扫描当前页需要的数据
+	var result []string
+	var count int
+	var cursor uint64 = 0
+
+	for {
+		var batch []string
+		batch, cursor, err = rcc.Scan(cursor, pattern, scanCount)
+		if err != nil {
+			lv_log.Error(fmt.Sprintf("Scan error: %v", err))
+			return nil, 0, err
+		}
+
+		for _, key := range batch {
+			if count >= start {
+				result = append(result, key)
+			}
+			count++
+			if count >= end {
+				return result, total, nil
+			}
+		}
+
+		if cursor == 0 {
+			break
+		}
+	}
+
+	return result, total, nil
+}
