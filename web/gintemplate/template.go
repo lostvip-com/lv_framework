@@ -2,7 +2,7 @@
  * Portions Copyright 2018 Foolin. All rights reserved.
  * Licensed under the MIT License.
  *
- * Portions Copyright 2025 lostvip.
+ * Portions Copyright 2019 lostvip.
  * Licensed under the Apache License, Version 2.0.
  *
  * Use of this source code is governed by a dual license:
