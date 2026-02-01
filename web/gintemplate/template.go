@@ -31,8 +31,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lostvip-com/lv_framework/lv_cache"
 	"github.com/lostvip-com/lv_framework/lv_conf"
+	gocache "github.com/patrickmn/go-cache"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/render"
@@ -45,7 +45,7 @@ var (
 
 type TemplateEngine struct {
 	config      TemplateConfig
-	tplMap      map[string]*template.Template
+	tplCache    *gocache.Cache
 	tplMutex    sync.RWMutex
 	fileHandler FileHandler
 }
@@ -76,7 +76,7 @@ type FileHandler func(config TemplateConfig, tplFile string) (content string, er
 func New(config TemplateConfig) *TemplateEngine {
 	return &TemplateEngine{
 		config:      config,
-		tplMap:      make(map[string]*template.Template),
+		tplCache:    gocache.New(config.CacheTTL, time.Minute),
 		tplMutex:    sync.RWMutex{},
 		fileHandler: DefaultFileHandler(),
 	}
@@ -163,15 +163,19 @@ func (e *TemplateEngine) executeTemplate(out io.Writer, name string, data interf
 		allFuncs[k] = v
 	}
 
-	// 双重检查锁模式来避免竞态条件
+	// Try to get from cache first
 	e.tplMutex.RLock()
-	tpl, exists := e.tplMap[name]
+	cachedTpl, found := e.tplCache.Get(name)
 	e.tplMutex.RUnlock()
 
-	if !exists {
+	var tpl *template.Template
+	if found {
+		tpl = cachedTpl.(*template.Template)
+	} else {
 		e.tplMutex.Lock()
-		// 双重检查
-		if tpl, exists = e.tplMap[name]; !exists {
+		// Double-check after acquiring write lock
+		cachedTpl, found = e.tplCache.Get(name)
+		if !found {
 			tpl, err = e.LoadTpl(useMaster, name, allFuncs)
 			if err != nil {
 				e.tplMutex.Unlock()
@@ -181,7 +185,10 @@ func (e *TemplateEngine) executeTemplate(out io.Writer, name string, data interf
 				e.tplMutex.Unlock()
 				return fmt.Errorf("failed to load template: %s, error: %v", name, err)
 			}
-			e.tplMap[name] = tpl
+			// Cache the parsed template (will expire automatically based on CacheTTL)
+			e.tplCache.Set(name, tpl, e.config.CacheTTL)
+		} else {
+			tpl = cachedTpl.(*template.Template)
 		}
 		e.tplMutex.Unlock()
 	}
@@ -240,28 +247,19 @@ func (e *TemplateEngine) SetFileHandler(handle FileHandler) {
 	e.fileHandler = handle
 }
 
-// ClearCache clears the cached template content from lv_cache
+// ClearCache clears all cached templates
 // Use this when templates are updated and you need to refresh the cache
 func (e *TemplateEngine) ClearCache() error {
-	// Clear all template cache keys with pattern "tpl:*"
-	cacheClient := lv_cache.GetCacheClient()
-	// Clear in-memory template map
 	e.tplMutex.Lock()
-	e.tplMap = make(map[string]*template.Template)
+	e.tplCache.Flush()
 	e.tplMutex.Unlock()
-	// Note: If using Redis, you may need to implement pattern-based deletion
-	// For now, we just clear the in-memory cache
 	return nil
 }
 
 // ClearTemplateCache clears a specific template from cache
 func (e *TemplateEngine) ClearTemplateCache(templateName string) error {
-	cacheKey := "tpl:" + templateName
-	cacheClient := lv_cache.GetCacheClient()
-	_ = cacheClient.Del(cacheKey)
-	// Clear from in-memory cache
 	e.tplMutex.Lock()
-	delete(e.tplMap, templateName)
+	e.tplCache.Delete(templateName)
 	e.tplMutex.Unlock()
 	return nil
 }
@@ -279,15 +277,6 @@ func (r TemplateRender) WriteContentType(w http.ResponseWriter) {
 
 func DefaultFileHandler() FileHandler {
 	return func(config TemplateConfig, tplFile string) (content string, err error) {
-		// Try to get from cache first (only if CacheTTL > 0)
-		if config.CacheTTL > 0 {
-			cacheKey := "tpl:" + tplFile
-			cachedContent, cacheErr := lv_cache.GetCacheClient().Get(cacheKey)
-			if cacheErr == nil && cachedContent != "" {
-				return cachedContent, nil
-			}
-		}
-
 		// Get the absolute path of the root template
 		templatePath := filepath.Join(config.Root, tplFile+config.Extension)
 		path, err := filepath.Abs(templatePath)
@@ -299,13 +288,6 @@ func DefaultFileHandler() FileHandler {
 			return "", fmt.Errorf("TemplateEngine render read name:%v, path:%v, error: %v", tplFile, path, err)
 		}
 		content = string(data)
-
-		// Cache the template content (only if CacheTTL > 0)
-		if config.CacheTTL > 0 {
-			cacheKey := "tpl:" + tplFile
-			_ = lv_cache.GetCacheClient().Set(cacheKey, content, config.CacheTTL)
-		}
-
 		return content, nil
 	}
 }
