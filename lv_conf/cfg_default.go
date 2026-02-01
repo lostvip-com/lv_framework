@@ -22,7 +22,6 @@ type CfgDefault struct {
 	DataSourceDefault string
 	proxyMap          map[string]string
 	proxyEnable       bool
-	cacheTpl          bool //默认不缓存模板，方便调试
 	contextPath       string
 	resourcesPath     string
 	logLevel          string
@@ -122,14 +121,6 @@ func (e *CfgDefault) IsProxyEnabled() bool {
 func (e *CfgDefault) GetFuncMap() template.FuncMap {
 	mp := template.FuncMap{}
 	return mp
-}
-
-func (e *CfgDefault) IsCacheTpl() bool {
-	return e.cacheTpl
-}
-
-func (e *CfgDefault) SetCacheTpl(cache bool) {
-	e.cacheTpl = cache
 }
 
 func (e *CfgDefault) GetVipperCfg() *viper.Viper {
@@ -325,7 +316,9 @@ func (e *CfgDefault) GetDriverDefault() string {
 	return e.GetDriver(e.GetDatasourceDefault())
 }
 func (e *CfgDefault) GetDBUrlDefault() string {
-	return e.GetDBUrl(e.GetDatasourceDefault())
+	dbName := e.GetDatasourceDefault()
+	key := fmt.Sprintf("application.datasource.%s.url", dbName)
+	return e.GetValueStr(key)
 }
 
 // IsDebug todo

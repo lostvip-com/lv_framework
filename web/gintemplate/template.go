@@ -1,9 +1,15 @@
 /*
- * Copyright 2018 Foolin.  All rights reserved.
+ * Portions Copyright 2018 Foolin. All rights reserved.
+ * Licensed under the MIT License.
  *
- * Use of this source code is governed by a MIT style
- * license that can be found in the LICENSE file.
+ * Portions Copyright 2025 lostvip.
+ * Licensed under the Apache License, Version 2.0.
  *
+ * Use of this source code is governed by a dual license:
+ * - The original MIT license for Foolin's gin-template project
+ * - The Apache License 2.0 for modifications and enhancements
+ *
+ * See the LICENSE file for details.
  */
 
 /*
@@ -23,7 +29,9 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/lostvip-com/lv_framework/lv_cache"
 	"github.com/lostvip-com/lv_framework/lv_conf"
 
 	"github.com/gin-gonic/gin"
@@ -54,8 +62,8 @@ type TemplateConfig struct {
 	Master    string           //template master
 	Partials  []string         //template partial, such as head, foot
 	Funcs     template.FuncMap //template functions
-	CacheTpl  bool             //cache template, debug mode
 	Delims    Delims           //delimeters
+	CacheTTL  time.Duration    //cache TTL for template content (0 = no cache)
 }
 
 type Delims struct {
@@ -75,15 +83,22 @@ func New(config TemplateConfig) *TemplateEngine {
 }
 
 func Default() *TemplateEngine {
-	cachePage := lv_conf.Config().IsCacheTpl()
+	// Get template cache TTL from config, default to 0 (no cache)
+	// Set to positive duration like "1h" to enable caching
+	cacheTTL := time.Duration(0)
+	if ttlStr := lv_conf.Config().GetValueStr("application.template.cache-ttl"); ttlStr != "" {
+		if duration, err := time.ParseDuration(ttlStr); err == nil {
+			cacheTTL = duration
+		}
+	}
 	DefaultConfig := TemplateConfig{
 		Root:      "views",
 		Extension: ".html",
 		Master:    "layouts/master",
 		Partials:  []string{},
 		Funcs:     make(template.FuncMap),
-		CacheTpl:  cachePage,
 		Delims:    Delims{Left: "{{", Right: "}}"},
+		CacheTTL:  cacheTTL,
 	}
 	return New(DefaultConfig)
 }
@@ -148,25 +163,29 @@ func (e *TemplateEngine) executeTemplate(out io.Writer, name string, data interf
 		allFuncs[k] = v
 	}
 
-	//e.tplMutex.RLock()
-	var tpl *template.Template
-	if e.config.CacheTpl {
-		tpl = e.tplMap[name]
-		if tpl == nil {
+	// 双重检查锁模式来避免竞态条件
+	e.tplMutex.RLock()
+	tpl, exists := e.tplMap[name]
+	e.tplMutex.RUnlock()
+
+	if !exists {
+		e.tplMutex.Lock()
+		// 双重检查
+		if tpl, exists = e.tplMap[name]; !exists {
 			tpl, err = e.LoadTpl(useMaster, name, allFuncs)
+			if err != nil {
+				e.tplMutex.Unlock()
+				return err
+			}
 			if tpl == nil {
-				panic("读取模板失败！" + name)
+				e.tplMutex.Unlock()
+				return fmt.Errorf("failed to load template: %s, error: %v", name, err)
 			}
 			e.tplMap[name] = tpl
 		}
-	} else {
-		tpl, err = e.LoadTpl(useMaster, name, allFuncs)
+		e.tplMutex.Unlock()
 	}
-	//e.tplMutex.RUnlock()
 
-	if err != nil {
-		return err
-	}
 	exeName := name
 	if useMaster && e.config.Master != "" {
 		exeName = e.config.Master
@@ -211,8 +230,6 @@ func (e *TemplateEngine) LoadTpl(useMaster bool, name string, allFuncs template.
 			return nil, fmt.Errorf("TemplateEngine render parser name:%v, error: %v", v, err)
 		}
 	}
-	e.tplMutex.Lock()
-	e.tplMutex.Unlock()
 	return tpl, nil
 }
 
@@ -221,6 +238,32 @@ func (e *TemplateEngine) SetFileHandler(handle FileHandler) {
 		panic("FileHandler can't set nil!")
 	}
 	e.fileHandler = handle
+}
+
+// ClearCache clears the cached template content from lv_cache
+// Use this when templates are updated and you need to refresh the cache
+func (e *TemplateEngine) ClearCache() error {
+	// Clear all template cache keys with pattern "tpl:*"
+	cacheClient := lv_cache.GetCacheClient()
+	// Clear in-memory template map
+	e.tplMutex.Lock()
+	e.tplMap = make(map[string]*template.Template)
+	e.tplMutex.Unlock()
+	// Note: If using Redis, you may need to implement pattern-based deletion
+	// For now, we just clear the in-memory cache
+	return nil
+}
+
+// ClearTemplateCache clears a specific template from cache
+func (e *TemplateEngine) ClearTemplateCache(templateName string) error {
+	cacheKey := "tpl:" + templateName
+	cacheClient := lv_cache.GetCacheClient()
+	_ = cacheClient.Del(cacheKey)
+	// Clear from in-memory cache
+	e.tplMutex.Lock()
+	delete(e.tplMap, templateName)
+	e.tplMutex.Unlock()
+	return nil
 }
 
 func (r TemplateRender) Render(w http.ResponseWriter) error {
@@ -236,8 +279,18 @@ func (r TemplateRender) WriteContentType(w http.ResponseWriter) {
 
 func DefaultFileHandler() FileHandler {
 	return func(config TemplateConfig, tplFile string) (content string, err error) {
+		// Try to get from cache first (only if CacheTTL > 0)
+		if config.CacheTTL > 0 {
+			cacheKey := "tpl:" + tplFile
+			cachedContent, cacheErr := lv_cache.GetCacheClient().Get(cacheKey)
+			if cacheErr == nil && cachedContent != "" {
+				return cachedContent, nil
+			}
+		}
+
 		// Get the absolute path of the root template
-		path, err := filepath.Abs(config.Root + string(os.PathSeparator) + tplFile + config.Extension)
+		templatePath := filepath.Join(config.Root, tplFile+config.Extension)
+		path, err := filepath.Abs(templatePath)
 		if err != nil {
 			return "", fmt.Errorf("TemplateEngine path:%v error: %v", path, err)
 		}
@@ -245,6 +298,14 @@ func DefaultFileHandler() FileHandler {
 		if err != nil {
 			return "", fmt.Errorf("TemplateEngine render read name:%v, path:%v, error: %v", tplFile, path, err)
 		}
-		return string(data), nil
+		content = string(data)
+
+		// Cache the template content (only if CacheTTL > 0)
+		if config.CacheTTL > 0 {
+			cacheKey := "tpl:" + tplFile
+			_ = lv_cache.GetCacheClient().Set(cacheKey, content, config.CacheTTL)
+		}
+
+		return content, nil
 	}
 }

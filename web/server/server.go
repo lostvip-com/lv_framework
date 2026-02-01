@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 lostvip
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package server
 
 import (
@@ -128,13 +144,21 @@ func InitGinRouter(contextPath string) *gin.Engine {
 	routerBase.StaticFS("/static", http.Dir(staticPath))
 	routerBase.StaticFile("/favicon.ico", staticPath+"/favicon.ico")
 
+	// Get template cache TTL from config
+	cacheTTL := time.Duration(0)
+	if ttlStr := lv_conf.Config().GetValueStr("application.template.cache-ttl"); ttlStr != "" {
+		if duration, err := time.ParseDuration(ttlStr); err == nil {
+			cacheTTL = duration
+		}
+	}
+
 	engine.HTMLRender = gintemplate.New(gintemplate.TemplateConfig{
 		Root:      "resources/template",
 		Extension: ".html",
 		Master:    "",
 		Partials:  lv_conf.Config().GetPartials(),
 		Funcs:     template.FuncMap(lv_conf.Config().GetFuncMap()),
-		CacheTpl:  lv_conf.Config().IsCacheTpl(),
+		CacheTTL:  cacheTTL,
 	})
 	// 注册业务路由
 	if len(router.GroupList) > 0 {

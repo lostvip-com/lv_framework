@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 lostvip
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package lv_redis
 
 import (
@@ -209,6 +225,7 @@ func (rcc *RedisClient) GetKeysPage(pattern string, page int, pageSize int) (key
 	//- 小页码（如 pageSize=10）时用 100，减少往返次数
 	//- 大页码（如 pageSize=500）时用 1000，提高效率
 	//SCAN 的 count 参数只是"建议"值，Redis 可能返回更多或更少的 key。
+	//3. 注意：Redis SCAN 返回的 key 是无序的，需要对结果排序的话可以在外部使用 sort.Strings()
 	// 根据 pageSize 计算 SCAN 的 count 参数
 	scanCount := int64(pageSize * 2)
 	if scanCount < 100 {
