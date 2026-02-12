@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/lostvip-com/lv_framework/lv_global"
@@ -20,8 +19,6 @@ type CfgDefault struct {
 	vipperCfg         *viper.Viper
 	AppName           string
 	DataSourceDefault string
-	proxyMap          map[string]string
-	proxyEnable       bool
 	contextPath       string
 	resourcesPath     string
 	logLevel          string
@@ -113,14 +110,6 @@ func (e *CfgDefault) GetGrpcPort() string {
 }
 func (e *CfgDefault) GetHost() string {
 	return e.GetValueStr("server.host")
-}
-func (e *CfgDefault) IsProxyEnabled() bool {
-	return false
-}
-
-func (e *CfgDefault) GetFuncMap() template.FuncMap {
-	mp := template.FuncMap{}
-	return mp
 }
 
 func (e *CfgDefault) GetVipperCfg() *viper.Viper {
@@ -217,14 +206,6 @@ func (e *CfgDefault) LoadConf() {
 	active := e.GetAppActive()
 	if active != "" {
 		e.mergeActiveYarm(active, fileExtArr, BaseFilePathArr)
-	}
-
-	if e.vipperCfg.GetBool("application.proxy.enable") == true {
-		e.proxyEnable = true
-		e.GetProxyMap()
-	} else {
-		fmt.Println("!!！！！！！！！！！！！！!!! porxy feature is disabled ！！！！！！！！！！！！！！！！！！！！！！！")
-		e.proxyEnable = false
 	}
 }
 
@@ -344,62 +325,6 @@ func (e *CfgDefault) GetLogOutput() string {
 func (e *CfgDefault) GetAppActive() string {
 	return e.GetValueStr("application.active")
 }
-
-func (e *CfgDefault) GetNacosAddrs() string {
-	return e.GetValueStr("cloud.nacos.discovery.server-addr")
-}
-
-func (e *CfgDefault) GetNacosPort() int {
-	port := e.vipperCfg.GetInt("cloud.nacos.discovery.port")
-	if port == 0 {
-		port = 8848
-	}
-	return port
-}
-func (e *CfgDefault) GetNacosNamespace() string {
-	ns := e.GetValueStr("cloud.nacos.discovery.namespace")
-	return ns
-}
-func (e *CfgDefault) GetGroupDefault() string {
-	return "DEFAULT_GROUP"
-}
-func (e *CfgDefault) GetDataId() string {
-	key := e.GetAppName() + "-" + e.GetAppActive() + ".yml"
-	fmt.Println(" dataId: " + key)
-	return key
-}
-
-func (e *CfgDefault) IsProxyEnable() bool {
-	return e.proxyEnable
-}
-
-func (e *CfgDefault) GetProxyMap() map[string]string {
-	if e.proxyEnable && e.proxyMap == nil {
-		e.LoadProxyInfo()
-	}
-	return e.proxyMap
-}
-
-func (e *CfgDefault) LoadProxyInfo() map[string]string {
-	if !e.IsProxyEnable() {
-		return nil
-	}
-	list := e.GetVipperCfg().GetStringSlice("application.proxy.prefix")
-	e.proxyMap = make(map[string]string)
-	for _, v := range list {
-		index := strings.Index(v, "=")
-		key := lv_conv.SubStr(v, 0, index)
-		hostPort := lv_conv.SubStr(v, index+1, len(v))
-		e.proxyMap[key] = hostPort
-	}
-	e.proxyEnable = e.GetBool("application.proxy.enable")
-	lv_log.Info("application.proxy:", e.proxyMap)
-	return e.proxyMap
-}
-
-func (e *CfgDefault) GetPartials() []string {
-	return []string{}
-} //
 
 func (e *CfgDefault) InitDatabaseDialector() error {
 	panic("implement me")

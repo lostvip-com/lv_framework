@@ -18,7 +18,6 @@ package lv_conf
 
 import (
 	"fmt"
-	"html/template"
 	"time"
 
 	"github.com/spf13/viper"
@@ -48,12 +47,7 @@ type IConfig interface {
 	GetDBUrl(dbName string) string
 	GetDBUrlDefault() string
 	GetAppActive() string
-	GetNacosAddrs() string
-	GetNacosPort() int
-	GetNacosNamespace() string
-	GetGroupDefault() string
 
-	GetDataId() string
 	GetLogLevel() string
 	GetVipperCfg() *viper.Viper
 	GetConf(key string) string
@@ -61,12 +55,8 @@ type IConfig interface {
 	GetDuration(key string, defaultDuration time.Duration) time.Duration
 	GetBool(key string) bool
 	GetInt(key string, defaultV int) int
-	GetProxyMap() map[string]string
-	IsProxyEnabled() bool
 	LoadConf()
-	GetFuncMap() template.FuncMap
 	GetAutoMigrate() string
-	GetPartials() []string
 	GetGrpcPort() string
 	GetHost() string
 	GetSessionTimeout(defaultTimeout time.Duration) time.Duration

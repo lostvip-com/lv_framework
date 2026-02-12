@@ -26,13 +26,10 @@ import (
 	"syscall"
 	"time"
 
-	"html/template"
-
 	"github.com/gin-gonic/gin"
 	"github.com/lostvip-com/lv_framework/lv_conf"
 	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/lostvip-com/lv_framework/utils/lv_err"
-	"github.com/lostvip-com/lv_framework/web/gintemplate"
 	"github.com/lostvip-com/lv_framework/web/middleware"
 	"github.com/lostvip-com/lv_framework/web/router"
 	"github.com/spf13/cast"
@@ -140,7 +137,6 @@ func InitGinRouter(contextPath string) *gin.Engine {
 	engine.Use(middleware.SetTraceId)
 	engine.Use(middleware.Options)
 	engine.Use(middleware.LoggerToFile())
-	engine.Use(middleware.IfProxyForward())
 	//////////////////////////////////////////////////////////////////////////////////
 	routerBase := engine.Group(contextPath)
 	tmp, _ := os.Getwd()
@@ -148,23 +144,6 @@ func InitGinRouter(contextPath string) *gin.Engine {
 	fmt.Println("Static Path：" + staticPath)
 	routerBase.StaticFS("/static", http.Dir(staticPath))
 	routerBase.StaticFile("/favicon.ico", staticPath+"/favicon.ico")
-
-	// Get template cache TTL from config
-	cacheTTL := time.Duration(0)
-	if ttlStr := lv_conf.Config().GetValueStr("application.template.cache-ttl"); ttlStr != "" {
-		if duration, err := time.ParseDuration(ttlStr); err == nil {
-			cacheTTL = duration
-		}
-	}
-
-	engine.HTMLRender = gintemplate.New(gintemplate.TemplateConfig{
-		Root:      "resources/template",
-		Extension: ".html",
-		Master:    "",
-		Partials:  lv_conf.Config().GetPartials(),
-		Funcs:     template.FuncMap(lv_conf.Config().GetFuncMap()),
-		CacheTTL:  cacheTTL,
-	})
 	// 注册业务路由
 	if len(router.GroupList) > 0 {
 		for _, group := range router.GroupList {

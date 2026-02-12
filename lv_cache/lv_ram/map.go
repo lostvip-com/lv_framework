@@ -53,7 +53,7 @@ func GetRamCacheClient() *RamCacheClient {
 
 func NewRamCacheClient() *RamCacheClient {
 	return &RamCacheClient{
-		c: gocache.New(gocache.DefaultExpiration, gocache.DefaultExpiration),
+		c: gocache.New(30*time.Minute, 5*time.Minute),
 	}
 }
 
@@ -201,7 +201,7 @@ func (rcc *RamCacheClient) HGetAll(key string) (map[string]string, error) {
 	return mp, nil
 }
 
-func (rcc *RamCacheClient) Close() error{
+func (rcc *RamCacheClient) Close() error {
 	rcc.c.Flush()
 	return nil
 }
@@ -265,6 +265,7 @@ func (rcc *RamCacheClient) HMSet(pk string, m map[string]any, duration time.Dura
 	}
 	return nil
 }
+
 // 支持reids的key匹配规则
 func (rcc *RamCacheClient) CountKeysByPattern(pattern string) (int64, error) {
 	if pattern == "" {
