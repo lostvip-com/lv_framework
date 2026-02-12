@@ -1,3 +1,19 @@
+/*
+ * Copyright 2019 lostvip
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package server
 
 import (
@@ -10,13 +26,10 @@ import (
 	"syscall"
 	"time"
 
-	"html/template"
-
 	"github.com/gin-gonic/gin"
 	"github.com/lostvip-com/lv_framework/lv_conf"
 	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/lostvip-com/lv_framework/utils/lv_err"
-	"github.com/lostvip-com/lv_framework/web/gintemplate"
 	"github.com/lostvip-com/lv_framework/web/middleware"
 	"github.com/lostvip-com/lv_framework/web/router"
 	"github.com/spf13/cast"
@@ -102,11 +115,16 @@ func NewHttpServer() *MyHttpServer {
 	port := lv_conf.Config().GetServerPort()
 	httpServer := &MyHttpServer{ServerName: lv_conf.Config().GetAppName()}
 	httpServer.HttpServer = &http.Server{
-		Addr:           "0.0.0.0:" + cast.ToString(port),
-		Handler:        InitGinRouter(contextPath),
-		ReadTimeout:    60 * time.Second,
-		WriteTimeout:   60 * time.Second,
-		MaxHeaderBytes: 1 << 20,
+		Addr:    "0.0.0.0:" + cast.ToString(port),
+		Handler: InitGinRouter(contextPath),
+	}
+	timeoutR := lv_conf.Config().GetValueStr("server.read-timeout")
+	if timeoutR != "" {
+		httpServer.HttpServer.ReadTimeout = cast.ToDuration(timeoutR)
+	}
+	timeoutW := lv_conf.Config().GetValueStr("server.write-timeout")
+	if timeoutW != "" {
+		httpServer.HttpServer.ReadTimeout = cast.ToDuration(timeoutW)
 	}
 	return httpServer
 }
@@ -119,7 +137,6 @@ func InitGinRouter(contextPath string) *gin.Engine {
 	engine.Use(middleware.SetTraceId)
 	engine.Use(middleware.Options)
 	engine.Use(middleware.LoggerToFile())
-	engine.Use(middleware.IfProxyForward())
 	//////////////////////////////////////////////////////////////////////////////////
 	routerBase := engine.Group(contextPath)
 	tmp, _ := os.Getwd()
@@ -127,15 +144,6 @@ func InitGinRouter(contextPath string) *gin.Engine {
 	fmt.Println("Static Path：" + staticPath)
 	routerBase.StaticFS("/static", http.Dir(staticPath))
 	routerBase.StaticFile("/favicon.ico", staticPath+"/favicon.ico")
-
-	engine.HTMLRender = gintemplate.New(gintemplate.TemplateConfig{
-		Root:      "resources/template",
-		Extension: ".html",
-		Master:    "",
-		Partials:  lv_conf.Config().GetPartials(),
-		Funcs:     template.FuncMap(lv_conf.Config().GetFuncMap()),
-		CacheTpl:  lv_conf.Config().IsCacheTpl(),
-	})
 	// 注册业务路由
 	if len(router.GroupList) > 0 {
 		for _, group := range router.GroupList {

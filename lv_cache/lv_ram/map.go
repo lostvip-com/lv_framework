@@ -1,3 +1,19 @@
+/*
+ * Copyright 2019 lostvip
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package lv_ram
 
 import (
@@ -37,7 +53,7 @@ func GetRamCacheClient() *RamCacheClient {
 
 func NewRamCacheClient() *RamCacheClient {
 	return &RamCacheClient{
-		c: gocache.New(gocache.DefaultExpiration, gocache.DefaultExpiration),
+		c: gocache.New(30*time.Minute, 5*time.Minute),
 	}
 }
 
@@ -185,7 +201,7 @@ func (rcc *RamCacheClient) HGetAll(key string) (map[string]string, error) {
 	return mp, nil
 }
 
-func (rcc *RamCacheClient) Close() error{
+func (rcc *RamCacheClient) Close() error {
 	rcc.c.Flush()
 	return nil
 }
@@ -249,6 +265,7 @@ func (rcc *RamCacheClient) HMSet(pk string, m map[string]any, duration time.Dura
 	}
 	return nil
 }
+
 // 支持reids的key匹配规则
 func (rcc *RamCacheClient) CountKeysByPattern(pattern string) (int64, error) {
 	if pattern == "" {
