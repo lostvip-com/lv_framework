@@ -3,10 +3,11 @@ package lv_sql
 import (
 	"errors"
 	"fmt"
-	"github.com/morrisxyang/xreflect"
-	"github.com/spf13/cast"
 	"reflect"
 	"strings"
+
+	"github.com/morrisxyang/xreflect"
+	"github.com/spf13/cast"
 )
 
 const (
@@ -115,7 +116,13 @@ func GetLimitSql(sql string, params interface{}) (string, error) {
 	if paramType == reflect.Map {
 		paramMap := params.(map[string]interface{})
 		pageNum = paramMap["pageNum"]
+		if pageNum == nil {
+			pageNum = paramMap["PageNum"]
+		}
 		pageSize = paramMap["pageSize"]
+		if pageSize == nil {
+			pageSize = paramMap["PageSize"]
+		}
 	} else {
 		pageNum, _ = xreflect.FieldValue(params, "PageNum")
 		pageSize, _ = xreflect.FieldValue(params, "PageSize")

@@ -2,10 +2,20 @@ package lv_json
 
 import (
 	"encoding/json"
+
 	"github.com/spf13/cast"
 )
 
-func ToJsonStr(e interface{}) string {
+func Unmarshal[T any](jsonStr string) (T, error) {
+	var result T
+	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
+		var zero T
+		return zero, err
+	}
+	return result, nil
+}
+
+func Marshal(e any) string {
 	//格式化
 	//b, err := json.MarshalIndent(user, "", "  ")
 	b, err := json.Marshal(e)
@@ -14,6 +24,9 @@ func ToJsonStr(e interface{}) string {
 	} else {
 		return "{}"
 	}
+}
+func ToJsonStr(e any) string {
+	return Marshal(e)
 }
 
 func ToStructPtr(jsonStr string, ptr any) error {
