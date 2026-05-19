@@ -10,8 +10,13 @@ import (
 	"github.com/spf13/cast"
 )
 
+<<<<<<< HEAD
 var cacheDuration = 5 * time.Minute
 var metaCache = gocache.New(cacheDuration, 2*time.Minute)
+=======
+var cacheDuration = 2 * time.Minute
+var metaCache = gocache.New(cacheDuration, 1*time.Minute)
+>>>>>>> 577a2f3d9b395fb329b58c5276f47b29b0b6adaf
 
 type structMeta struct {
 	fields []fieldMeta
