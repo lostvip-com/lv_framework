@@ -39,6 +39,16 @@ func (p *Paging) GetPageSize() int {
 	return p.PageSize
 }
 
+// 初始化默认值，当 PageNum 或 PageSize 未设置时赋默认值
+func (p *Paging) InitDefaults() {
+	if p.PageNum < 1 {
+		p.PageNum = 1
+	}
+	if p.PageSize < 1 {
+		p.PageSize = PageSize
+	}
+}
+
 // 创建分页
 func CreatePaging(pageNum, pagesize int, total int64) *Paging {
 	if pageNum < 1 {

@@ -117,30 +117,30 @@ func DebugTraceId(traceId any, args ...interface{}) {
 }
 func Errorf(format string, args ...interface{}) {
 	if Log != nil {
-		Log.Errorf(format, args)
+		Log.Errorf(format, args...)
 	} else {
-		fmt.Printf("\n"+format, args)
+		fmt.Printf("\n"+format, args...)
 	}
 }
 func Warnf(format string, args ...interface{}) {
 	if Log != nil {
-		Log.Warnf(format, args)
+		Log.Warnf(format, args...)
 	} else {
-		fmt.Printf("\n"+format, args)
+		fmt.Printf("\n"+format, args...)
 	}
 }
 func Infof(format string, args ...interface{}) {
 	if Log != nil {
-		Log.Infof(format, args)
+		Log.Infof(format, args...)
 	} else {
-		fmt.Printf("\n"+format, args)
+		fmt.Printf("\n"+format, args...)
 	}
 }
 
 func Debugf(format string, args ...interface{}) {
 	if Log != nil {
-		Log.Debugf(format, args)
+		Log.Debugf(format, args...)
 	} else {
-		fmt.Printf("\n"+format, args)
+		fmt.Printf("\n"+format, args...)
 	}
 }
