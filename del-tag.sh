@@ -1,1 +1,1 @@
-git tag | grep 'v1.5' | xargs git tag -d
+git tag | grep 'v1.2*' | xargs git tag -d
