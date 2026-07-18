@@ -156,14 +156,20 @@ func Count(db *gorm.DB, countSql string, params any) (int64, error) {
 		lv_log.Info(err)
 		return 0, err
 	}
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 	//查总数
 	var count int64
-	if rows != nil {
-		for rows.Next() {
-			rows.Scan(&count)
+	for rows.Next() {
+		if err = rows.Scan(&count); err != nil {
+			return 0, err
 		}
 	}
-	return count, err
+	if err = rows.Err(); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 /**
@@ -371,6 +377,9 @@ func ListArrStr(db *gorm.DB, sqlQuery string, params any) ([][]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 	cols, err := rows.Columns()
 	if err != nil {
 		return nil, err
@@ -399,7 +408,10 @@ func ListArrStr(db *gorm.DB, sqlQuery string, params any) ([][]string, error) {
 		}
 		listRows = append(listRows, row)
 	}
-	return listRows, err
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return listRows, nil
 }
 
 // ListOneColStr 查询某一列，放到数组中
@@ -421,6 +433,9 @@ func ListOneColStr(db *gorm.DB, sqlQuery string, params any) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 	cols, err := rows.Columns()
 	if err != nil {
 		return nil, err
@@ -443,7 +458,10 @@ func ListOneColStr(db *gorm.DB, sqlQuery string, params any) ([]string, error) {
 			}
 		}
 	}
-	return arr, err
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return arr, nil
 }
 
 // GetOneCol 获取一列
@@ -462,6 +480,9 @@ func GetOneCol[T any](db *gorm.DB, sqlQuery string, params ...any) ([]T, error) 
 			return nil, err
 		}
 		results = append(results, val)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return results, nil
 }

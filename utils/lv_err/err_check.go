@@ -19,32 +19,23 @@ package lv_err
 import (
 	"database/sql"
 	"errors"
+	"fmt"
+	"runtime"
+
+	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/lostvip-com/lv_framework/utils/lv_json"
 	"github.com/lostvip-com/lv_framework/web/lv_dto"
 	"gorm.io/gorm"
-	"log"
-	"runtime"
 )
 
-// HasError 错误断言
-// 当 error 不为 nil 时触发 panic
-// 对于当前请求不会再执行接下来的代码，并且返回指定格式的错误信息和错误码
-// 若 msg 为空，则默认为 error 中的内容
+// IfErrPanic 当 error 不为 nil 时 panic。
 func IfErrPanic(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
-func HasErrAndPanic(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
 
-// HasError 错误断言
-// 当 error 不为 nil 时触发 panic
-// 对于当前请求不会再执行接下来的代码，并且返回指定格式的错误信息和错误码
-// 若 msg 为空，则默认为 error 中的内容
+// Assert1 条件为真时 panic 一个 lv_dto.Resp（业务断言响应专用）。
 func Assert1(conditionYes bool, msg string) {
 	if conditionYes {
 		var res lv_dto.Resp
@@ -55,17 +46,15 @@ func Assert1(conditionYes bool, msg string) {
 	}
 }
 
-// HasError 错误断言
-// 当 error 不为 nil 时触发 panic
-// 对于当前请求不会再执行接下来的代码，并且返回指定格式的错误信息和错误码
-// 若 msg 为空，则默认为 error 中的内容
+// HasErrorMsg 当 error 不为 nil 时 panic 指定 msg 的 lv_dto.Resp。
+// Deprecated: 使用 WrapErr 返回 error。
 func HasErrorMsg(err error, msg string) {
 	if err != nil {
 		if msg == "" {
 			msg = err.Error()
 		}
 		_, file, line, _ := runtime.Caller(1)
-		log.Printf("%s:%v error: %#v", file, line, err)
+		lv_log.Error(fmt.Sprintf("%s:%v error: %#v", file, line, err))
 		var res lv_dto.Resp
 		res.Msg = msg
 		res.Code = 1
@@ -73,16 +62,19 @@ func HasErrorMsg(err error, msg string) {
 	}
 }
 
+// HasError1 当 error 不为 nil 时 panic 含 error 信息的 lv_dto.Resp。
+// Deprecated: 使用 CheckErr。
 func HasError1(err error) {
 	if err != nil {
 		_, file, line, _ := runtime.Caller(1)
-		log.Printf("%s:%v error: %#v", file, line, err)
+		lv_log.Error(fmt.Sprintf("%s:%v error: %#v", file, line, err))
 		var res lv_dto.Resp
 		res.Msg = err.Error()
 		res.Code = 1
 		panic(res)
 	}
 }
+
 func IsRecordNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || errors.Is(err, sql.ErrNoRows)
 }

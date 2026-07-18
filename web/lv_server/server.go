@@ -115,7 +115,7 @@ func NewHttpServer() *MyHttpServer {
 	}
 	timeoutW := lv_conf.Config().GetValueStr("server.write-timeout")
 	if timeoutW != "" {
-		httpServer.HttpServer.ReadTimeout = cast.ToDuration(timeoutW)
+		httpServer.HttpServer.WriteTimeout = cast.ToDuration(timeoutW)
 	}
 	return httpServer
 }

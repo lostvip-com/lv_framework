@@ -8,7 +8,6 @@ import (
 
 	"github.com/lostvip-com/lv_framework/lv_global"
 	"github.com/lostvip-com/lv_framework/lv_log"
-	"github.com/lostvip-com/lv_framework/utils/lv_conv"
 	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/lostvip-com/lv_framework/utils/lv_net"
 	"github.com/spf13/cast"
@@ -70,18 +69,16 @@ func (e *CfgDefault) GetSessionTimeout(defaultTimeout time.Duration) time.Durati
 }
 
 func (e *CfgDefault) GetDuration(key string, defaultDuration time.Duration) time.Duration {
-	timeoutStr := e.GetValueStr(lv_global.SESSION_TIMEOUT_KEY)
-	if timeoutStr == "" { // 设置一个长期的过期时间
-		lv_log.Warn("No Duration Configured! default:", defaultDuration)
+	timeoutStr := e.GetValueStr(key)
+	if timeoutStr == "" {
 		return defaultDuration
-	} else {
-		timeout, err := time.ParseDuration(timeoutStr)
-		if err != nil {
-			lv_log.Error("time.ParseDuration(timeout) error:", key, err)
-			return defaultDuration
-		}
-		return timeout
 	}
+	timeout, err := time.ParseDuration(timeoutStr)
+	if err != nil {
+		lv_log.Error("time.ParseDuration error: key=", key, err)
+		return defaultDuration
+	}
+	return timeout
 }
 func (e *CfgDefault) GetDatasourceDefault() string {
 	if e.DataSourceDefault == "" {
@@ -129,23 +126,7 @@ func (e *CfgDefault) GetValueStr(key string) string {
 		e.LoadConf()
 	}
 	val := cast.ToString(e.vipperCfg.Get(key))
-	if strings.HasPrefix(val, "$") { //存在动态表达式
-		val = strings.TrimSpace(val)             //去空格
-		val = lv_conv.SubStr(val, 2, len(val)-1) //去掉 ${}
-		if strings.HasPrefix(val, "\"") {
-			panic("${...} format error !!!")
-		}
-		index := strings.Index(val, ":") //ssz:按第一个: 分割，前半部分是占位符，后半部分是默认值
-		val0 := lv_conv.SubStr(val, 0, index)
-		val0 = os.Getenv(val0) //从环境变量中取值,替换
-		if val0 == "" {        //未设置环境变量,使用默认值
-			val = lv_conv.SubStr(val, index+1, len(val))
-			val = strings.Trim(val, "\"")
-		} else {
-			val = val0
-		}
-	}
-	return val
+	return e.parseVal(val)
 }
 
 func (e *CfgDefault) GetBool(key string) bool {
@@ -164,26 +145,34 @@ func (e *CfgDefault) GetInt(key string, defaultV int) int {
 	if e.vipperCfg == nil {
 		e.LoadConf()
 	}
-	val := cast.ToString(e.vipperCfg.Get(key))
+	val := e.parseVal(cast.ToString(e.vipperCfg.Get(key)))
 	if val == "" {
 		return defaultV
 	}
-	return cast.ToInt(e.parseVal(val))
+	return cast.ToInt(val)
 }
 func (e *CfgDefault) parseVal(val string) string {
-	if strings.HasPrefix(val, "$") { //存在动态表达式
-		val = strings.TrimSpace(val)             //去空格
-		val = lv_conv.SubStr(val, 2, len(val)-1) //去掉 ${}
-		index := strings.Index(val, ":")         //ssz:按第一个: 分割，前半部分是占位符，后半部分是默认值
-		val0 := lv_conv.SubStr(val, 0, index)
-		val0 = os.Getenv(val0) //从环境变量中取值,替换
-		if val0 == "" {        //未设置环境变量,使用默认值
-			val = lv_conv.SubStr(val, index, len(val))
-		} else {
-			val = val0
-		}
+	if !strings.HasPrefix(val, "$") {
+		return val
 	}
-	return val
+	val = strings.TrimSpace(val)
+	// 支持 ${VAR} 与 ${VAR:default} 两种形式
+	if !strings.HasPrefix(val, "${") || !strings.HasSuffix(val, "}") {
+		return val
+	}
+	inner := val[2 : len(val)-1]
+	index := strings.Index(inner, ":")
+	var envName, defaultVal string
+	if index >= 0 {
+		envName = inner[:index]
+		defaultVal = inner[index+1:]
+	} else {
+		envName = inner // 无默认值
+	}
+	if envVal := os.Getenv(envName); envVal != "" {
+		return envVal
+	}
+	return strings.Trim(defaultVal, "\"")
 }
 
 func (e *CfgDefault) LoadConf() {

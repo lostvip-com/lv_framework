@@ -17,44 +17,53 @@
 package lv_middleware
 
 import (
+	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lostvip-com/lv_framework/lv_global"
 	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/lostvip-com/lv_framework/utils/lv_err"
 	"github.com/lostvip-com/lv_framework/web/lv_dto"
-	"github.com/spf13/cast"
 )
 
+// RecoverError 捕获 panic 并转换为 HTTP 响应。
+// 安全原则：对外只返回中性提示（避免泄漏 SQL/内部路径），原始错误带 traceId 落日志。
 func RecoverError(c *gin.Context) {
 	defer func() {
 		err := recover()
-		if err != nil {
-			switch errTypeObj := err.(type) {
-			case string:
-				if strings.HasPrefix(errTypeObj, "{") {
-					c.Header("Content-Type", "application/json; charset=utf-8")
-					c.String(http.StatusOK, errTypeObj)
-					c.Abort()
-				} else {
-					c.AbortWithStatusJSON(http.StatusOK, &lv_dto.CommonRes{Code: 500, Msg: errTypeObj})
-				}
-			case lv_dto.Resp: //封装过的
-				c.AbortWithStatusJSON(http.StatusOK, errTypeObj)
-			case error: // 原始的错误
-				if gin.IsDebugging() {
-					lv_err.PrintStackTrace(errTypeObj)
-				}
-				lv_log.Error(c, "CustomError XXXXXXXXXX: ", errTypeObj)
-				c.AbortWithStatusJSON(http.StatusOK, &lv_dto.CommonRes{Code: 500, Msg: cast.ToString(errTypeObj)})
-			default:
-				lv_log.Error(c, "default CustomErrorXXXXXXXXXX: ", errTypeObj)
-				c.AbortWithStatusJSON(http.StatusOK, &lv_dto.CommonRes{Code: 500, Msg: "未知错误!"})
+		if err == nil {
+			return
+		}
+		traceId := getTraceId(c)
+		switch errTypeObj := err.(type) {
+		case lv_dto.Resp: // 业务受控返回
+			c.AbortWithStatusJSON(http.StatusOK, errTypeObj)
+		case string:
+			// 业务主动抛出的提示文案
+			lv_log.Error(fmt.Sprintf("[traceId=%s] panic(string): %v", traceId, errTypeObj))
+			c.AbortWithStatusJSON(http.StatusOK, &lv_dto.CommonRes{Code: 500, Msg: errTypeObj})
+		case error:
+			// 原始错误：对外中性提示，详情带 traceId 落日志
+			if gin.IsDebugging() {
+				lv_err.PrintStackTrace(errTypeObj)
 			}
-		} else {
-			lv_log.Info(c, "-----------request over----------")
+			lv_log.Error(fmt.Sprintf("[traceId=%s] panic(error): %v", traceId, errTypeObj))
+			c.AbortWithStatusJSON(http.StatusOK, &lv_dto.CommonRes{Code: 500, Msg: "系统繁忙，请稍后重试"})
+		default:
+			lv_log.Error(fmt.Sprintf("[traceId=%s] panic(unknown): %v", traceId, errTypeObj))
+			c.AbortWithStatusJSON(http.StatusOK, &lv_dto.CommonRes{Code: 500, Msg: "系统繁忙，请稍后重试"})
 		}
 	}()
 	c.Next()
+}
+
+// getTraceId 从 gin.Context 取 traceId（由 SetTraceId 中间件写入）
+func getTraceId(c *gin.Context) string {
+	if v, ok := c.Get(lv_global.TraceId); ok {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
 }

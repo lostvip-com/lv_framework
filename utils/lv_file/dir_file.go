@@ -255,7 +255,7 @@ func ClearDir(dir string) error {
 			if err := os.Remove(path); err != nil {
 				return fmt.Errorf("删除失败 %s: %w", path, err)
 			}
-			lv_log.Info("已删除: %s\n", path)
+			lv_log.Infof("已删除: %s\n", path)
 		}
 		return nil
 	})
@@ -279,7 +279,7 @@ func ClearDirFile(dir, ext string) error {
 			if err := os.Remove(path); err != nil {
 				return fmt.Errorf("删除失败 %s: %w", path, err)
 			}
-			lv_log.Info("已删除: %s\n", path)
+			lv_log.Infof("已删除: %s\n", path)
 		}
 		return nil
 	})

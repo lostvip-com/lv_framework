@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/lostvip-com/lv_framework/lv_global"
-	"github.com/satori/go.uuid"
 )
 
 // ...
@@ -16,7 +16,7 @@ func SetTraceId(c *gin.Context) {
 
 	traceId := c.GetHeader(lv_global.TraceId)
 	if traceId == "" {
-		traceId := strings.ReplaceAll(uuid.NewV4().String(), "-", "")
+		traceId := strings.ReplaceAll(uuid.New().String(), "-", "")
 		c.Header(lv_global.TraceId, traceId)
 		c.Request.Header.Set(lv_global.TraceId, traceId)
 		c.Set(lv_global.TraceId, traceId)

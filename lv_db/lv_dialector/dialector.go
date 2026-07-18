@@ -18,7 +18,9 @@ package lv_dialector
 
 import (
 	"fmt"
+	"sort"
 	"strings"
+	"sync"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -37,9 +39,13 @@ type DbParamsProvider interface {
 
 // DefaultParamsProvider 默认参数提供者实现
 var DefaultParamsProvider = map[string]DbParamsProvider{
-	"mysql": &MySQLParamsProvider{},
-	"sqlite": &SQLiteParamsProvider{},
+	"mysql":    &MySQLParamsProvider{},
+	"sqlite":   &SQLiteParamsProvider{},
+	"postgres": &PostgreSQLParamsProvider{},
 }
+
+// dialectorsMu 保护 DialectorRegistry / DefaultDialectorName / DefaultParamsProvider
+var dialectorsMu sync.RWMutex
 
 // MySQLParamsProvider MySQL参数提供者
 type MySQLParamsProvider struct{}
@@ -89,14 +95,25 @@ var (
 	DefaultDialectorName string
 )
 
+// init 预注册内置方言，避免在读路径上 auto-register 导致并发写 map
+func init() {
+	RegisterDefaultDialector("mysql", func() Dialector { return &MySQLDialector{} })
+	RegisterDialector("sqlite", func() Dialector { return &SQLiteDialector{} })
+	RegisterDialector("postgres", func() Dialector { return &PostgreSQLDialector{} })
+}
+
 // RegisterDialector 注册数据库方言
 func RegisterDialector(name string, getDialector func() Dialector) {
+	dialectorsMu.Lock()
+	defer dialectorsMu.Unlock()
 	DialectorRegistry[name] = getDialector
 }
 
 // RegisterDefaultDialector 注册默认数据库方言
 func RegisterDefaultDialector(name string, getDialector func() Dialector) {
 	RegisterDialector(name, getDialector)
+	dialectorsMu.Lock()
+	defer dialectorsMu.Unlock()
 	DefaultDialectorName = name
 }
 
@@ -104,60 +121,67 @@ func RegisterDefaultDialector(name string, getDialector func() Dialector) {
 func GetDialector(dialectorName string) (Dialector, error) {
 	// 如果没有指定方言名称，使用默认方言
 	if dialectorName == "" {
+		dialectorsMu.RLock()
 		dialectorName = DefaultDialectorName
+		dialectorsMu.RUnlock()
 	}
-	
+
 	// 如果仍然没有方言名称，返回错误
 	if dialectorName == "" {
 		return nil, fmt.Errorf("no dialector specified and no default dialector registered")
 	}
-	
-	// 检查方言是否已注册
+
+	// 检查方言是否已注册（只读，不再 auto-register）
+	dialectorsMu.RLock()
 	getDialector, exists := DialectorRegistry[dialectorName]
+	dialectorsMu.RUnlock()
 	if !exists {
-		// 自动注册常见方言
-		switch dialectorName {
-		case "mysql":
-			RegisterDialector("mysql", func() Dialector {
-				return &MySQLDialector{}
-			})
-		case "sqlite":
-			RegisterDialector("sqlite", func() Dialector {
-				return &SQLiteDialector{}
-			})
-		default:
-			return nil, fmt.Errorf("%s dialector not registered", dialectorName)
-		}
-		// 重新获取注册的方言
-		getDialector, exists = DialectorRegistry[dialectorName]
-		if !exists {
-			return nil, fmt.Errorf("failed to register %s dialector", dialectorName)
-		}
+		return nil, fmt.Errorf("%s dialector not registered", dialectorName)
 	}
-	
+
 	return getDialector(), nil
+}
+
+// GetDefaultParamsByDriver 按驱动名获取默认参数（线程安全）
+func GetDefaultParamsByDriver(driver string) (map[string]string, bool) {
+	dialectorsMu.RLock()
+	defer dialectorsMu.RUnlock()
+	provider, exists := DefaultParamsProvider[driver]
+	if !exists {
+		return nil, false
+	}
+	return provider.GetDefaultParams(), true
 }
 
 // IsDialectorRegistered 检查方言是否已注册
 func IsDialectorRegistered(name string) bool {
+	dialectorsMu.RLock()
+	defer dialectorsMu.RUnlock()
 	_, exists := DialectorRegistry[name]
 	return exists
 }
 
 // GetRegisteredDialectors 获取所有已注册的方言名称
 func GetRegisteredDialectors() []string {
-	var names []string
+	dialectorsMu.RLock()
+	defer dialectorsMu.RUnlock()
+	names := make([]string, 0, len(DialectorRegistry))
 	for name := range DialectorRegistry {
 		names = append(names, name)
 	}
 	return names
 }
 
-// 新增辅助函数处理连接选项
+// buildOptions 将参数 map 拼接为 URL 查询串，按 key 排序保证顺序稳定
 func (cfg *DbConfig) buildOptions(options map[string]string) string {
+	keys := make([]string, 0, len(options))
+	for k := range options {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 	var opts []string
-	for k, v := range options {
-		opts = append(opts, fmt.Sprintf("%s=%s", k, v))
+	for _, k := range keys {
+		opts = append(opts, fmt.Sprintf("%s=%s", k, options[k]))
 	}
 	return strings.Join(opts, "&")
 }
@@ -168,7 +192,8 @@ func (cfg *DbConfig) RebuildUrl() string {
 	if len(arr) > 1 {                  //存在自定义url参数
 		listAll := strings.Split(arr[1], "&")
 		for _, kv := range listAll {
-			arrKV := strings.Split(kv, "=")
+			// 用 SplitN(=,2) 避免值中含 '=' 被截断
+			arrKV := strings.SplitN(kv, "=", 2)
 			if len(arrKV) > 1 { //使用自定义的url参数覆盖默认的
 				cfg.Params[arrKV[0]] = arrKV[1]
 			}

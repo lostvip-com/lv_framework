@@ -19,13 +19,14 @@ package lv_net
 import (
 	"errors"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // BaseModel represents meta data of entity.
 type JWTClaims struct { // token里面添加用户信息，验证token后可能会用到用户信息
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 	Id          int64    `json:"id"`
 	Phone       string   `json:"phone"`
 	Username    string   `json:"username"`
@@ -47,8 +48,8 @@ func GetJWTToken(username string, phone string) (signedToken string) {
 		RoleCodes:   []string{},
 		Permissions: []string{},
 	}
-	claims.IssuedAt = time.Now().Unix()
-	claims.ExpiresAt = time.Now().Add(time.Second * time.Duration(ExpireTime)).Unix()
+	claims.IssuedAt = jwt.NewNumericDate(time.Now())
+	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Second * time.Duration(ExpireTime)))
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, err := token.SignedString([]byte(Secret))
 	if err != nil {
@@ -74,10 +75,7 @@ func VerifyAction(strToken string) (*JWTClaims, error) {
 
 	fmt.Println("VerifyAction------ok-------------》claims:", claims, "---ok:", ok)
 
-	if err := token.Claims.Valid(); err != nil {
-		fmt.Println("token.Claims.Valid()-------------------》err:", err)
-		return nil, errors.New("Token无效，请重新登录")
-	}
+	// v5 的 ParseWithClaims 已自动校验 exp/nbf 等，无效时上面 err != nil 已返回
 	fmt.Println(" end VerifyAction-------------------》claims:", claims, "---error:", err)
 	return claims, err
 }

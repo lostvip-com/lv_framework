@@ -21,11 +21,13 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	gocache "github.com/patrickmn/go-cache"
 )
 
+// defaultTime 内层 hash field 的兜底过期时间（外层 hash key 由 Expire/HSet 的 TTL 管控）
 var defaultTime = 24 * 60 * time.Minute
 
 var (
@@ -37,17 +39,19 @@ var (
 	FieldValueNumberError = errors.New("hash set field and value number is fault")
 )
 var (
-	rdb *RamCacheClient
+	rdb     *RamCacheClient
+	ramOnce sync.Once
 )
 
 type RamCacheClient struct {
 	c *gocache.Cache
 }
 
+// GetRamCacheClient 获取 RAM 缓存单例（sync.Once 避免并发首调创建多实例）
 func GetRamCacheClient() *RamCacheClient {
-	if rdb == nil {
+	ramOnce.Do(func() {
 		rdb = NewRamCacheClient()
-	}
+	})
 	return rdb
 }
 
@@ -93,8 +97,11 @@ func (rcc *RamCacheClient) Get(key string) (data string, err error) {
 	if !exist {
 		return "", Nil
 	}
-	data = value.(string)
-	return
+	s, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("cache: key [%s] value is not string", key)
+	}
+	return s, nil
 }
 
 func (rcc *RamCacheClient) Del(keys ...string) error {
@@ -112,7 +119,11 @@ func (rcc *RamCacheClient) getHashCache(key string) (*gocache.Cache, bool, error
 	if !exist {
 		return nil, false, nil
 	}
-	value := data.(*gocache.Cache)
+	value, ok := data.(*gocache.Cache)
+	if !ok {
+		// 该 key 被当普通 KV 存过，类型不符，返回 error 而非 panic
+		return nil, false, fmt.Errorf("cache: key [%s] is not a hash", key)
+	}
 	return value, true, nil
 }
 
@@ -122,7 +133,8 @@ func (rcc *RamCacheClient) HSet(key string, values ...interface{}) error {
 		return err
 	}
 	if !exist {
-		hashCache = gocache.New(gocache.DefaultExpiration, gocache.DefaultExpiration)
+		// 内层 field 兜底过期（defaultTime + 5min 清理），防止外层 hash key 未设 TTL 时 field 永久驻留
+		hashCache = gocache.New(defaultTime, 5*time.Minute)
 	}
 	var field, val string
 	for i := 0; i < len(values); i += 2 {
@@ -169,7 +181,11 @@ func (rcc *RamCacheClient) HGet(key, field string) (string, error) {
 	if !exist {
 		return "", Nil
 	}
-	return value.(string), nil
+	s, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("cache: hash [%s] field [%s] value is not string", key, field)
+	}
+	return s, nil
 }
 
 func (rcc *RamCacheClient) HDel(key string, fields ...string) error {
@@ -196,7 +212,11 @@ func (rcc *RamCacheClient) HGetAll(key string) (map[string]string, error) {
 		return make(map[string]string), nil
 	}
 	for k, v := range hashCache.Items() {
-		mp[strings.TrimPrefix(strings.TrimPrefix(k, key), ":")] = v.Object.(string)
+		s, ok := v.Object.(string)
+		if !ok {
+			continue
+		}
+		mp[strings.TrimPrefix(strings.TrimPrefix(k, key), ":")] = s
 	}
 	return mp, nil
 }
@@ -258,10 +278,19 @@ func (rcc *RamCacheClient) invalidFieldValue(field, value string) error {
 	return rcc.invalidValue(value)
 }
 
+// HMSet 批量设置 hash field 并对整个 hash key 设置过期。
+// 修复：原实现对不存在的顶层 key "pk:k" 调 Expire 导致 duration 失效（会话永不过期）。
+// 现改为 HSet 完成后对 pk 本身调一次 Expire(pk, duration)。
 func (rcc *RamCacheClient) HMSet(pk string, m map[string]any, duration time.Duration) error {
 	for k, v := range m {
-		rcc.HSet(pk, k, v)
-		rcc.Expire(pk+":"+k, duration)
+		if err := rcc.HSet(pk, k, v); err != nil {
+			return err
+		}
+	}
+	if duration > 0 {
+		if err := rcc.Expire(pk, duration); err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -144,7 +144,7 @@ func (t *DateTime) Scan(value any) error {
 				return nil
 			}
 		}
-		lv_log.Error("cannot parse %q into DateTime, tried formats: %v", v, supportedFormats)
+		lv_log.Errorf("cannot parse %q into DateTime, tried formats: %v", v, supportedFormats)
 		return fmt.Errorf("cannot parse %q into DateTime", v)
 	default:
 		return fmt.Errorf("cannot scan %T into DateTime", value)

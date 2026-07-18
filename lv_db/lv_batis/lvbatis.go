@@ -29,18 +29,20 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/lostvip-com/lv_framework/lv_log"
+	"io"
+	"os"
+	"path/filepath"
+	"reflect"
+	"regexp"
+	"strings"
+	"sync"
+
 	"github.com/lostvip-com/lv_framework/utils/lv_file"
 	"github.com/lostvip-com/lv_framework/utils/lv_reflect"
 	"github.com/lostvip-com/lv_framework/utils/lv_tpl"
 	"github.com/morrisxyang/xreflect"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
-	"io"
-	"os"
-	"reflect"
-	"regexp"
-	"strings"
 )
 
 // Execer is an interface used by Exec.
@@ -54,145 +56,140 @@ type ExecerContext interface {
 }
 
 type LvBatis struct {
-	Queries     map[string]string
-	Vars        map[string]map[string]any
-	TplFile     string
-	CurrBaseSql string
+	Queries map[string]string
+	Vars    map[string]map[string]any // 只读：各 tag 的变量名集合（不再作为可写参数容器）
+	TplFile string
 }
 
+// sqlFileCache 缓存已解析的 LvBatis（key=绝对路径）。Queries/Vars 加载后只读，可安全并发共享
+var sqlFileCache sync.Map
+
 /**
- * 从mapper目录解析sql文件
+ * 从mapper目录解析sql文件，命中缓存直接返回（不再每次磁盘IO+正则解析）
  */
-func NewInstance(relativePath string) *LvBatis {
+func NewInstance(relativePath string) (*LvBatis, error) {
 	basePath, _ := os.Getwd()
-	absolutePath := basePath + "/resources/mapper" //为了方便管理，必须把映射文件放到mapper目录
-	if strings.HasPrefix(relativePath, "/") {
-		absolutePath = absolutePath + relativePath
-	} else {
-		absolutePath = absolutePath + "/" + relativePath
+	absolutePath := filepath.Join(basePath, "resources", "mapper", relativePath)
+	if v, ok := sqlFileCache.Load(absolutePath); ok {
+		return v.(*LvBatis), nil
 	}
 	dot, err := LoadFromFile(absolutePath)
-	dot.TplFile = relativePath
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return dot
+	dot.TplFile = relativePath
+	// LoadOrStore：并发首调时只有一个 dot 落盘，其余拿到同一个
+	actual, _ := sqlFileCache.LoadOrStore(absolutePath, dot)
+	return actual.(*LvBatis), nil
 }
 
 func (d *LvBatis) GetSql(tagName string, params interface{}) (string, error) {
 	query, err := d.LookupQuery(tagName)
-	if err != nil || query == "" {
-		panic("tpl文件格式错误!")
+	if err != nil {
+		return "", err
+	}
+	if query == "" {
+		return "", fmt.Errorf("%s: tag [%s] 内容为空", d.TplFile, tagName)
 	}
 	//动态解析
 	sql, err := lv_tpl.ParseTemplateStr(query, params)
-	if sql == "" || err != nil {
-		lv_log.Error(err)
-		panic(d.getTplFile() + " 可能存在错误：<p/>1.使用了参数对象中不存在的属性<p/>2.template语法错误！")
+	if err != nil {
+		return "", fmt.Errorf("%s 解析 tag [%s] 失败: %w（可能：1.使用了参数对象中不存在的属性 2.template语法错误）", d.TplFile, tagName, err)
 	}
-	d.CurrBaseSql = sql //缓存当前正在执行的分页sql
-	return sql, err
+	if sql == "" {
+		return "", fmt.Errorf("%s: tag [%s] 渲染后 sql 为空", d.TplFile, tagName)
+	}
+	return sql, nil
 }
 
-/**
- * 从mapper目录解析sql文件
- */
-
-/**
- * 从mapper目录解析sql文件
- */
-func (d *LvBatis) GetLimitSqlParams(tagName string, params interface{}) (string, map[string]any, error) {
-	var pageNum, pageSize any
+// resolve 解析分页参数并渲染基础SQL（局部变量传递，不再依赖实例共享状态 CurrBaseSql/Vars）
+func (d *LvBatis) resolve(tagName string, params interface{}) (baseSql string, pageNum, pageSize int, sqlParams map[string]any, err error) {
+	var pNum, pSize any
+	sqlParams = make(map[string]any) // 每次新建，避免写共享 Vars 导致并发 map writes / 脏数据残留
 	paramType := reflect.TypeOf(params).Kind()
-	sqlParams := d.Vars[tagName]
 	if paramType == reflect.Map {
 		paramMap := params.(map[string]interface{})
-		pageNum = paramMap["pageNum"]
-		pageSize = paramMap["pageSize"]
-		for key, value := range paramMap { //合并参数
-			sqlParams[key] = value // 覆盖或新增键值对
+		pNum = paramMap["pageNum"]
+		pSize = paramMap["pageSize"]
+		for key, value := range paramMap {
+			sqlParams[key] = value
 		}
 	} else {
-		pageNum, _ = xreflect.FieldValue(params, "PageNum")
-		pageSize, _ = xreflect.FieldValue(params, "PageSize")
-		lv_reflect.CopyProperties2Map(params, sqlParams) //合并参数
+		pNum, _ = xreflect.FieldValue(params, "PageNum")
+		pSize, _ = xreflect.FieldValue(params, "PageSize")
+		lv_reflect.CopyProperties2Map(params, sqlParams)
 	}
-	if pageSize == nil || pageNum == nil {
-		return "", nil, errors.New("pageSize and pageNum can not be empty! ")
+	pageSize = normalizePageSize(cast.ToInt(pSize))
+	pageNum = normalizePageNum(cast.ToInt(pNum))
+	baseSql, err = d.GetSql(tagName, sqlParams)
+	return baseSql, pageNum, pageSize, sqlParams, err
+}
+
+// normalizePageSize 限制分页大小：<=0 或超过上限时回退到上限，防止恶意大页打爆DB
+func normalizePageSize(size int) int {
+	const maxPageSize = 1000
+	if size <= 0 || size > maxPageSize {
+		return maxPageSize
 	}
-	sql, err := d.GetSql(tagName, sqlParams)
-	start := cast.ToInt64(pageSize) * (cast.ToInt64(pageNum) - 1)
-	sql = sql + " limit  " + cast.ToString(start) + "," + cast.ToString(pageSize)
-	return sql, sqlParams, err
+	return size
+}
+
+// normalizePageNum 页码兜底为 1，避免负数/0 导致非法 offset
+func normalizePageNum(num int) int {
+	if num <= 0 {
+		return 1
+	}
+	return num
+}
+
+func (d *LvBatis) GetLimitSqlParams(tagName string, params interface{}) (string, map[string]any, error) {
+	baseSql, pageNum, pageSize, sqlParams, err := d.resolve(tagName, params)
+	if err != nil {
+		return "", nil, err
+	}
+	start := int64(pageSize) * (int64(pageNum) - 1)
+	sql := baseSql + " limit " + cast.ToString(start) + "," + cast.ToString(pageSize)
+	return sql, sqlParams, nil
 }
 
 func (d *LvBatis) GetLimitSql(tagName string, params interface{}) (string, error) {
-	var pageNum, pageSize int
-	paramType := reflect.TypeOf(params).Kind()
-	sqlParams := d.Vars[tagName]
-	if paramType == reflect.Map {
-		paramMap := params.(map[string]interface{})
-		pNum := paramMap["pageNum"]
-		pSize := paramMap["pageSize"]
-		pageNum  = cast.ToInt(pNum)
-		pageSize = cast.ToInt(pSize)
-		for key, value := range paramMap { //合并参数
-			sqlParams[key] = value // 覆盖或新增键值对
-		}
-	} else {
-		pNum, _ := xreflect.FieldValue(params, "PageNum")
-		pSize, _ := xreflect.FieldValue(params, "PageSize")
-		pageNum  = cast.ToInt(pNum)
-		pageSize = cast.ToInt(pSize)
-		lv_reflect.CopyProperties2Map(params, sqlParams) //合并参数
+	baseSql, pageNum, pageSize, _, err := d.resolve(tagName, params)
+	if err != nil {
+		return "", err
 	}
-
-	if pageSize==0{
-		pageSize = 1000;
-	}
-	if pageNum == 0 {
-		pageNum = 1
-	}
-	if d.CurrBaseSql == "" {
-		sql,err := d.GetSql(tagName, sqlParams)
-		if err!=nil{
-			return "",err
-		}
-		d.CurrBaseSql = sql
-	}
-	start := cast.ToInt64(pageSize) * (cast.ToInt64(pageNum) - 1)
-	//sql = sql + " limit  " + cast.ToString(start) + "," + cast.ToString(pageSize)
-	// 改为可以兼容mysql和postgresql的分页方式
-	sql := d.CurrBaseSql + " limit  " + cast.ToString(pageSize) + " offset " + cast.ToString(start)
-	return sql, nil
+	start := int64(pageSize) * (int64(pageNum) - 1)
+	// 兼容 mysql/postgresql 的分页方式
+	return baseSql + " limit " + cast.ToString(pageSize) + " offset " + cast.ToString(start), nil
 }
 
-func (d *LvBatis) GetCountSql(tagName string, sqlParams interface{}) (string, error) {
-	if d.CurrBaseSql == "" {
-		sql,err := d.GetSql(tagName, sqlParams)
-		if err!=nil{
-			return "",err
-		}
-		d.CurrBaseSql = sql
+func (d *LvBatis) GetCountSql(tagName string, params interface{}) (string, error) {
+	baseSql, _, _, _, err := d.resolve(tagName, params)
+	if err != nil {
+		return "", err
 	}
-	index := strings.Index(d.CurrBaseSql, " order ")
-	noOrderSql := d.CurrBaseSql
-	if index >20  { // select * from t where order by
-		noOrderSql = d.CurrBaseSql[:index]
-	}else{
-		noOrderSql = d.CurrBaseSql
-	}
-	sql := " select count(*)  from (" + noOrderSql + ") t "
-	return sql, nil
+	return " select count(*) from (" + removeOrderByClause(baseSql) + ") t ", nil
 }
 
-func (d *LvBatis) GetPageSql(tagName string, sqlParams any) (string, string, error) {
-	countSql, err := d.GetCountSql(tagName,sqlParams)
+// removeOrderByClause 粗略去除 order by 子句（大小写不敏感）。
+// 注意：SQL 字面量内含 "order by" 仍可能误截，彻底方案需 SQL 词法分析。
+func removeOrderByClause(sql string) string {
+	lower := strings.ToLower(sql)
+	idx := strings.Index(lower, " order by ")
+	if idx > 0 {
+		return sql[:idx]
+	}
+	return sql
+}
+
+func (d *LvBatis) GetPageSql(tagName string, params any) (string, string, error) {
+	baseSql, pageNum, pageSize, _, err := d.resolve(tagName, params)
 	if err != nil {
 		return "", "", err
 	}
-	limitSql, err := d.GetLimitSql(tagName, sqlParams)
-	return limitSql, countSql, err
+	start := int64(pageSize) * (int64(pageNum) - 1)
+	limitSql := baseSql + " limit " + cast.ToString(pageSize) + " offset " + cast.ToString(start)
+	countSql := " select count(*) from (" + removeOrderByClause(baseSql) + ") t "
+	return limitSql, countSql, nil
 }
 
 func (d *LvBatis) LookupQuery(name string) (query string, err error) {
@@ -341,5 +338,6 @@ func Merge(dots ...*LvBatis) *LvBatis {
 
 	return &LvBatis{
 		Queries: queries,
+		Vars:    parseVarName(queries),
 	}
 }

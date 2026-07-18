@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"regexp"
 	"strings"
+
+	"github.com/lostvip-com/lv_framework/lv_log"
 )
 
 type Scanner struct {
@@ -65,6 +67,10 @@ func (s *Scanner) Run(io *bufio.Scanner) map[string]string {
 	for state := initialState; io.Scan(); {
 		s.line = io.Text()
 		state = state(s)
+	}
+	// 检查扫描过程中的 IO 错误（如单行超长被截断），避免静默返回不完整的 queries
+	if err := io.Err(); err != nil {
+		lv_log.Error("sql scanner io error:", err)
 	}
 
 	return s.queries

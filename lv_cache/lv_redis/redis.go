@@ -18,7 +18,9 @@ package lv_redis
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
 
@@ -26,6 +28,9 @@ import (
 	"github.com/lostvip-com/lv_framework/lv_log"
 	"github.com/redis/go-redis/v9"
 )
+
+// ErrNil Redis 未命中哨兵（由 Get/HGet 把 redis.Nil 转译为此值，供 lv_cache.IsNotFound 统一识别）
+var ErrNil = errors.New("redis: nil")
 
 var (
 	redisClient *RedisClient
@@ -45,33 +50,34 @@ func GetInstance(indexDb int) *RedisClient {
 	return redisClient
 }
 
+// NewRedisClient 创建 Redis 客户端。连接失败时不再 panic（避免短暂抖动打崩进程），
+// 也不把密码写入日志；返回的 client 后续操作会返回连接错误，调用方可降级。
 func NewRedisClient(indexDb int) *RedisClient {
 	conf := lv_conf.CfgDefault{}
 	addr := conf.GetValueStr("application.redis.host")
 	port := conf.GetValueStr("application.redis.port")
 	password := conf.GetValueStr("application.redis.password")
+	poolSize := conf.GetInt("application.redis.pool-size", 10*runtime.GOMAXPROCS(0))
+	minIdle := conf.GetInt("application.redis.min-idle", 10)
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr + ":" + port,
-		Password: password, // 没有密码，默认值
-		DB:       indexDb,  // 默认DB 0
+		Addr:         addr + ":" + port,
+		Password:     password, // 没有密码，默认值
+		DB:           indexDb,  // 默认DB 0
+		PoolSize:     poolSize,
+		MinIdleConns: minIdle,
+		MaxRetries:   3,
+		DialTimeout:  5 * time.Second,
+		PoolTimeout:  4 * time.Second,
 	})
 
-	redisClient := &RedisClient{client: rdb}
+	rc := &RedisClient{client: rdb}
 
-	// 测试连接
-	if _, err := redisClient.Ping(context.Background()); err != nil {
-		msg := `
-              ------------>连接 Redis 错误：
-              无法链接到 Redis!!!! 检查相关配置:
-              host: %v
-              port: %v
-              password: %v
-             `
-		lv_log.Error(fmt.Sprintf(msg, addr, port, password))
-		panic(fmt.Sprintf("Redis 错误: host: %v port: %v", addr, port))
+	// 测试连接（失败不 panic，仅告警）
+	if _, err := rc.Ping(context.Background()); err != nil {
+		lv_log.Error(fmt.Sprintf("连接 Redis 失败: host=%s port=%s (密码已脱敏)；后续缓存操作将返回错误，请检查配置。err=%v", addr, port, err))
 	}
 
-	return redisClient
+	return rc
 }
 
 func (rcc *RedisClient) Ping(ctx context.Context) (string, error) {
@@ -109,9 +115,13 @@ func (rcc *RedisClient) Set(key string, value interface{}, expiration time.Durat
 	return nil
 }
 
+// Get 未命中时返回 ErrNil（而非 redis.Nil），便于上层用 lv_cache.IsNotFound 统一判定
 func (rcc *RedisClient) Get(key string) (string, error) {
 	data, err := rcc.client.Get(context.Background(), key).Result()
 	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return "", ErrNil
+		}
 		lv_log.Error(fmt.Sprintf("Get error: %v", err))
 		return "", err
 	}
@@ -136,9 +146,13 @@ func (rcc *RedisClient) HSet(key string, values ...interface{}) error {
 	return nil
 }
 
+// HGet 未命中时返回 ErrNil（而非 redis.Nil），便于上层用 lv_cache.IsNotFound 统一判定
 func (rcc *RedisClient) HGet(key, field string) (string, error) {
 	data, err := rcc.client.HGet(context.Background(), key, field).Result()
 	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return "", ErrNil
+		}
 		lv_log.Error(fmt.Sprintf("HGet error: %v", err))
 		return "", err
 	}

@@ -49,20 +49,18 @@ func InitLog(fileName string) *LvLogSlogImpl {
 
 	// 7. 设置默认 logger
 	slog.SetDefault(impl.logger)
-
-	impl.logger.Info("slog output:", lv_conf.Config().GetValueStr("application.log.output"))
+	val := lv_conf.Config().GetValueStr("application.log.output")
+	impl.logger.Info("slog output", "output", val)
 	return impl
 }
 
 func (e *LvLogSlogImpl) parseLevel() slog.Level {
-	level := lv_conf.Config().GetLogLevel()
-
+	level := strings.ToLower(strings.TrimSpace(lv_conf.Config().GetLogLevel()))
 	switch level {
 	case "":
-		return slog.LevelError
+		return slog.LevelInfo // 默认 Info（原为 Error 会吞掉启动/请求日志）
 	case "debug":
 		lv_global.IsDebug = true
-		fmt.Println("============ debug mod ============")
 		return slog.LevelDebug
 	case "info":
 		return slog.LevelInfo
@@ -73,7 +71,9 @@ func (e *LvLogSlogImpl) parseLevel() slog.Level {
 	case "error":
 		return slog.LevelError
 	default:
-		panic("Log level is not support: " + level)
+		// 未知级别不再 panic，回退 Info 并告警
+		fmt.Println("unknown log level: " + level + ", fallback to info")
+		return slog.LevelInfo
 	}
 }
 
