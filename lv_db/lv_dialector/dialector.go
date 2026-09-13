@@ -37,42 +37,15 @@ type DbParamsProvider interface {
 	GetDefaultParams() map[string]string
 }
 
-// DefaultParamsProvider 默认参数提供者实现
-var DefaultParamsProvider = map[string]DbParamsProvider{
-	"mysql":    &MySQLParamsProvider{},
-	"sqlite":   &SQLiteParamsProvider{},
-	"postgres": &PostgreSQLParamsProvider{},
-}
+// DefaultParamsProvider 默认参数提供者实现(由各驱动子包在 init() 时自注册;
+// 本包不 import 任何具体数据库驱动 —— 应用按需 blank-import 对应 dialect/<driver> 子包)
+var DefaultParamsProvider = map[string]DbParamsProvider{}
 
 // dialectorsMu 保护 DialectorRegistry / DefaultDialectorName / DefaultParamsProvider
 var dialectorsMu sync.RWMutex
 
-// MySQLParamsProvider MySQL参数提供者
-type MySQLParamsProvider struct{}
-
-func (p *MySQLParamsProvider) GetDefaultParams() map[string]string {
-	return map[string]string{
-		"parseTime":    "true",
-		"charset":      "utf8mb4",
-		"loc":          "Local",
-		"timeout":      "30s",
-		"readTimeout":  "30s",
-		"writeTimeout": "30s",
-	}
-}
-
-// SQLiteParamsProvider SQLite参数提供者
-type SQLiteParamsProvider struct{}
-
-func (p *SQLiteParamsProvider) GetDefaultParams() map[string]string {
-	return map[string]string{
-		"cache":         "shared",
-		"mode":          "rwc",
-		"_busy_timeout": "10000",
-		"_journal_mode": "WAL",
-		"_synchronous":  "NORMAL",
-	}
-}
+// MySQLParamsProvider / SQLiteParamsProvider 等参数提供者已随各驱动实现
+// 迁移至 lv_db/dialect/<driver> 子包,本包仅保留注册表与通用配置。
 
 // DbConfig 通用数据库配置
 type DbConfig struct {
@@ -95,12 +68,11 @@ var (
 	DefaultDialectorName string
 )
 
-// init 预注册内置方言，避免在读路径上 auto-register 导致并发写 map
-func init() {
-	RegisterDefaultDialector("mysql", func() Dialector { return &MySQLDialector{} })
-	RegisterDialector("sqlite", func() Dialector { return &SQLiteDialector{} })
-	RegisterDialector("postgres", func() Dialector { return &PostgreSQLDialector{} })
-}
+// 各驱动方言(/mysql/sqlite/postgres/tdengine)不再由本包 init() 预注册:
+// 具体实现位于 lv_db/dialect/<driver> 子包,各自在 init() 中自注册,
+// 应用按需 blank-import,避免二进制耦合用不到的驱动(如 CGO 的 sqlite)。
+
+// TDEngineParamsProvider 已迁移至 lv_db/dialect/tdengine 子包。
 
 // RegisterDialector 注册数据库方言
 func RegisterDialector(name string, getDialector func() Dialector) {
@@ -198,6 +170,9 @@ func (cfg *DbConfig) RebuildUrl() string {
 				cfg.Params[arrKV[0]] = arrKV[1]
 			}
 		}
+	}
+	if len(cfg.Params) == 0 { // 无任何查询参数:保持原样(taosWs 等 DSN 不接受空 "?")
+		return cfg.Url
 	}
 	cfg.Url = arr[0] + "?" + cfg.buildOptions(cfg.Params)
 	return cfg.Url

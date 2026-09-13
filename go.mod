@@ -12,6 +12,7 @@ require (
 	github.com/redis/go-redis/v9 v9.17.0
 	github.com/spf13/cast v1.9.2
 	github.com/spf13/viper v1.19.0
+	github.com/taosdata/driver-go/v3 v3.8.2
 	github.com/xuri/excelize/v2 v2.10.0
 	golang.org/x/crypto v0.43.0
 	golang.org/x/sync v0.18.0
@@ -38,6 +39,7 @@ require (
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect

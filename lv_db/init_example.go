@@ -1,48 +1,71 @@
 // Package lv_db 数据库引擎包
-// 
-// 这个示例展示了如何正确使用优化后的方言注册机制
-// 以实现业务模块只导入必要的数据库驱动
+//
+// 本示例说明:应用/业务方如何在不改动框架的前提下,自定义或扩展数据库方言。
+// 核心包 lv_dialector 只持注册表(零驱动依赖),具体方言一律经注册进入。
 package lv_db
 
-// 示例：如何在业务模块中注册SQLite方言
-// 
-// 业务模块只需要导入：
-// 1. lv_db包（核心引擎）
-// 2. sqlite_dialector包（需要的方言）
-// 3. 对应的GORM驱动包（gorm.io/driver/sqlite）
+// ─────────────────────────────────────────────────────────────────
+// 方式一(推荐):自定义方言子包,init() 自注册,blank-import 引入
 //
-// 不需要导入其他数据库驱动（如mysql、postgres），从而减少不必要的依赖
+// 适合:接入框架未内置的数据库,或为兼容库(如 TiDB/OceanBase)定义
+// 独立参数集。与框架仓库内 lv_db/dialect/<driver> 子包的做法完全一致。
 //
-// 示例代码：
+// 	// myapp/dialect/mydb/dialector.go —— 用户自己的包
+// 	package mydb
 //
-// import (
-//     "github.com/lostvip-com/lv_framework/lv_db"
-//     _ "github.com/lostvip-com/lv_framework/lv_db/lv_dialector/sqlite_dialector"
-//     _ "gorm.io/driver/sqlite" // 只导入需要的驱动
-// )
+// 	import (
+// 	    "gorm.io/gorm"
 //
-// func init() {
-//     // 注册SQLite方言
-//     lv_db.GetInstance().RegisterDialector("sqlite", func() lv_dialector.Dialector {
-//         return &lv_dialector.SQLiteDialector{}
-//     })
-//     
-//     // 或者注册为默认方言
-//     // lv_db.GetInstance().RegisterDefaultDialector("sqlite", func() lv_dialector.Dialector {
-//     //     return &lv_dialector.SQLiteDialector{}
-//     // })
-// }
+// 	    "github.com/lostvip-com/lv_framework/lv_db/lv_dialector"
+// 	)
 //
-// func main() {
-//     // 使用已注册的方言创建数据库连接
-//     // 配置文件中定义的数据源会自动使用注册的方言
-//     db := lv_db.GetInstance().GetDefault()
-//     
-//     // 执行数据库操作
-//     // ...
-// }
+// 	func init() {
+// 	    lv_dialector.RegisterDialector("mydb", func() lv_dialector.Dialector {
+// 	        return &Dialector{}
+// 	    })
+// 	    // 可选:登记默认连接参数(会以 ?k=v 拼入 URL,自定义参数可覆盖;
+// 	    // DSN 不支持查询串的数据库留空即可,URL 将原样透传)
+// 	    lv_dialector.DefaultParamsProvider["mydb"] = &ParamsProvider{}
+// 	}
 //
-// 注意：
-// 1. 每个方言只需要注册一次，多个数据源可以共享同一个方言
-// 2. 未注册的方言在使用时会报错，避免了隐式依赖
-// 3. 业务模块可以根据需要注册不同的方言组合
+// 	type Dialector struct{}
+//
+// 	func (d *Dialector) GetName() string { return "mydb" }
+//
+// 	func (d *Dialector) NewDialector(url string) gorm.Dialector {
+// 	    return gormDialector{dsn: url} // 实现 gorm.Dialector,参考 gorm 官方
+// 	    // "write driver" 文档;若目标库已有 database/sql 驱动,约 40 行即可
+// 	    // (可参考框架内 lv_db/dialect/tdengine 子包的完整写法)
+// 	}
+//
+// 	// main.go(或 bootstrap 包)blank-import 引入,init 自动注册:
+// 	// import _ "myapp/dialect/mydb"
+//
+// 	// application-dev.yml 即可直接使用:
+// 	//   datasource:
+// 	//     db-custom:
+// 	//       driver: mydb
+// 	//       url: ...
+// ─────────────────────────────────────────────────────────────────
+// 方式二:使用框架内置方言(按需 blank-import,不引入的不参与链接)
+//
+// 	import (
+// 	    _ "github.com/lostvip-com/lv_framework/lv_db/dialect/mysql"
+// 	    _ "github.com/lostvip-com/lv_framework/lv_db/dialect/tdengine"
+// 	)
+//
+// 未引入的方言(如 sqlite/postgres)不注册、不链接 —— 未注册的 driver
+// 在建连时会返回明确错误,避免隐式依赖。
+// ─────────────────────────────────────────────────────────────────
+// 方式三:绕过方言,直接注册现成的 *gorm.DB(逃生通道)
+//
+// 适合:连接由外部构造(已有 *sql.DB、代理、测试桩等)的场景:
+//
+// 	gdb, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+// 	lv_db.GetInstance().RegisterDB("db-custom", gdb)
+//
+// 注意事项:
+// 1. 注册必须发生在 InitDataSources() 之前 —— 放在自己包的 init() 里最稳
+//    (包初始化先于 main,时序天然保证);
+// 2. DefaultParamsProvider 为普通 map,请在 init()(单线程)阶段写入;
+// 3. 一个方言可被多个数据源共享;数据源间用 application.datasource.<name> 区分。

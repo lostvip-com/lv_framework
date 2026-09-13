@@ -36,6 +36,7 @@ type DataSource struct {
 	Driver          string
 	URL             string
 	Params          map[string]string
+	Lazy            bool          // 懒加载:启动期不建连,首次 GetDBE 时才初始化(适用于可选依赖,如 TDengine)
 	MaxIdle         int
 	MaxOpen         int
 	ConnTimeout     time.Duration // 拨号超时
@@ -343,6 +344,15 @@ func (engine *Engine) InitDataSources() {
 	// 初始化每个数据源
 	for _, dsName := range dataSourceNames {
 		ds := engine.createDataSourceConfig(dsName)
+		if ds.Lazy {
+			// 懒加载数据源:仅登记配置,首次 GetDBE 时才建连;
+			// 可选依赖(如 TDengine)不可达时 MUST NOT 阻塞主服务启动
+			engine.mu.Lock()
+			engine.dataSources[dsName] = ds
+			engine.mu.Unlock()
+			fmt.Printf("数据源 [%s] 为懒加载模式,跳过启动期建连,驱动类型: %s\n", dsName, ds.Driver)
+			continue
+		}
 		// 使用引擎的CreateAndRegisterDB方法创建并注册数据库连接
 		engine.mu.Lock()
 		_, err := engine.CreateAndRegisterDB(ds)
@@ -378,6 +388,7 @@ func (engine *Engine) createDataSourceConfig(dsName string) *DataSource {
 		Driver:          driver,
 		URL:             cfg.GetValueStr(fmt.Sprintf("application.datasource.%s.url", dsName)),
 		Params:          make(map[string]string),
+		Lazy:            cfg.GetBool(fmt.Sprintf("application.datasource.%s.lazy", dsName)),
 		MaxIdle:         cfg.GetInt(fmt.Sprintf("application.datasource.%s.max-idle", dsName), 10),
 		MaxOpen:         cfg.GetInt(fmt.Sprintf("application.datasource.%s.max-open", dsName), 100),
 		ShowSQL:         cfg.GetBool("application.datasource.show-sql"),
