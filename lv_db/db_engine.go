@@ -36,7 +36,7 @@ type DataSource struct {
 	Driver          string
 	URL             string
 	Params          map[string]string
-	Lazy            bool          // 懒加载:启动期不建连,首次 GetDBE 时才初始化(适用于可选依赖,如 TDengine)
+	Lazy            bool // 懒加载:启动期不建连,首次 GetDBE 时才初始化(适用于可选依赖,如 TDengine)
 	MaxIdle         int
 	MaxOpen         int
 	ConnTimeout     time.Duration // 拨号超时
@@ -163,7 +163,6 @@ func (e *Engine) GetDefaultE() (*gorm.DB, error) {
 }
 
 // GetDefault 获取默认数据库连接
-// Deprecated: 使用 GetDefaultE；出错时 panic 兼容旧行为
 func (e *Engine) GetDefault() *gorm.DB {
 	db, err := e.GetDefaultE()
 	if err != nil {
@@ -173,7 +172,6 @@ func (e *Engine) GetDefault() *gorm.DB {
 }
 
 // GetDBDefault 获取默认数据库连接（别名方法，用于API一致性）
-// Deprecated: 使用 GetDefaultE
 func (e *Engine) GetDBDefault() *gorm.DB {
 	return e.GetDefault()
 }
