@@ -147,15 +147,17 @@ type Tunit struct {
 func GetRealAddressByIP(ip string) string {
 	url := "http://whois.pconline.com.cn/ipJson.jsp?ip=" + ip + "&json=true"
 	resp, err := http.Get(url)
-	defer resp.Body.Close()
-	var result string
-	body, err := io.ReadAll(resp.Body)
-	if err == nil {
-		dws := new(Tunit)
-		json.Unmarshal(body, &dws)
-		result = dws.Pro + " " + dws.City
-	} else {
-		result = ip
+	if err != nil {
+		return ip
 	}
-	return result
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ip
+	}
+	dws := new(Tunit)
+	if err = json.Unmarshal(body, &dws); err != nil {
+		return ip
+	}
+	return dws.Pro + " " + dws.City
 }

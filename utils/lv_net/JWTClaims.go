@@ -31,7 +31,7 @@ type JWTClaims struct { // token里面添加用户信息，验证token后可能�
 	Phone       string   `json:"phone"`
 	Username    string   `json:"username"`
 	Realname    string   `json:"realname"`
-	RoleCodes   []string `json:"permissions"`
+	RoleCodes   []string `json:"roleCodes"`
 	Permissions []string `json:"permissions"`
 }
 
