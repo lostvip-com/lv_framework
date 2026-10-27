@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd E:/go-work/lv_framework && go build ./utils/lv_net/ && echo \\\"BUILD_OK\\\" && go vet ./utils/lv_net/ && echo \\\"VET_OK\\\"\"}",
+  "error": "Exit code 1\nBUILD_OK\n# github.com/lostvip-com/lv_framework/utils/lv_net\nutils\\lv_net\\ip.go:150:8: using resp before checking for errors\nutils\\lv_net\\JWTClaims.go:35:2: struct field Permissions repeats json tag \"permissions\" also at JWTClaims.go:34",
+  "timestamp": "2026-10-26T08:50:18.794Z",
+  "retry_count": 2
+}

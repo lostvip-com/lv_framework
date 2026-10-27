@@ -1,0 +1,160 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1793004308786,
+  "projectRoot": "E:\\go-work\\lv_framework",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Go",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "go.mod"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "go",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [],
+    "gitBranches": {
+      "defaultBranch": "master",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "lv_cache": {
+      "path": "lv_cache",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1793004308753,
+      "keyFiles": [
+        "ICache.go"
+      ]
+    },
+    "lv_conf": {
+      "path": "lv_conf",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1793004308754,
+      "keyFiles": [
+        "cfg_default.go",
+        "const.go",
+        "iconfig.go"
+      ]
+    },
+    "lv_db": {
+      "path": "lv_db",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1793004308754,
+      "keyFiles": [
+        "db_engine.go",
+        "db_engine_lazy_test.go",
+        "db_engine_test.go",
+        "init_example.go"
+      ]
+    },
+    "lv_global": {
+      "path": "lv_global",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1793004308755,
+      "keyFiles": [
+        "global.go"
+      ]
+    },
+    "lv_log": {
+      "path": "lv_log",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1793004308755,
+      "keyFiles": [
+        "logConf.go"
+      ]
+    },
+    "utils": {
+      "path": "utils",
+      "purpose": "Utility functions",
+      "fileCount": 0,
+      "lastAccessed": 1793004308756,
+      "keyFiles": []
+    },
+    "web": {
+      "path": "web",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1793004308756,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "utils\\lv_net\\http_client.go",
+      "accessCount": 21,
+      "lastAccessed": 1793090736094,
+      "type": "file"
+    },
+    {
+      "path": "utils\\lv_net\\http_client_test.go",
+      "accessCount": 13,
+      "lastAccessed": 1793090758786,
+      "type": "file"
+    },
+    {
+      "path": "utils\\lv_net\\ip.go",
+      "accessCount": 2,
+      "lastAccessed": 1793004649195,
+      "type": "file"
+    },
+    {
+      "path": "utils\\lv_net\\JWTClaims.go",
+      "accessCount": 2,
+      "lastAccessed": 1793005074283,
+      "type": "file"
+    },
+    {
+      "path": "utils\\lv_net\\http_client_json.go",
+      "accessCount": 1,
+      "lastAccessed": 1793004351845,
+      "type": "file"
+    },
+    {
+      "path": "utils\\lv_net\\http_client_form.go",
+      "accessCount": 1,
+      "lastAccessed": 1793004357312,
+      "type": "file"
+    },
+    {
+      "path": "utils\\lv_net\\until.go",
+      "accessCount": 1,
+      "lastAccessed": 1793004357938,
+      "type": "file"
+    },
+    {
+      "path": "utils\\lv_net\\http_proxy.go",
+      "accessCount": 1,
+      "lastAccessed": 1793004358309,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
