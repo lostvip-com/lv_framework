@@ -89,6 +89,28 @@ func TestHttpClient(t *testing.T) {
 	if s, err := Get(srv.URL + "/slow"); err != nil || s != "slow-ok" {
 		t.Fatalf("Get after timeout = %q, %v", s, err)
 	}
+
+	// GetJSON：一步解析到结构体
+	var obj map[string]any
+	if err := GetJSON(srv.URL+"/json", &obj); err != nil || obj["ok"] != true {
+		t.Fatalf("GetJSON = %v, %v", obj, err)
+	}
+
+	// SendJSON：body 序列化 + 响应解析
+	var obj2 map[string]any
+	if err := SendJSON(srv.URL+"/json", map[string]int{"a": 1}, &obj2); err != nil || obj2["ok"] != true {
+		t.Fatalf("SendJSON = %v, %v", obj2, err)
+	}
+
+	// SendJSON：result 传 nil 只校验状态码
+	if err := SendJSON(srv.URL+"/json", map[string]int{"a": 1}, nil); err != nil {
+		t.Fatalf("SendJSON nil result: %v", err)
+	}
+
+	// 非 JSON 响应应报解析错误
+	if err := GetJSON(srv.URL, &obj); err == nil {
+		t.Fatal("expected unmarshal error")
+	}
 }
 
 func TestDownload(t *testing.T) {
@@ -263,5 +285,27 @@ func TestDownloadResume(t *testing.T) {
 	}
 	if got, _ := os.ReadFile(path); !bytes.Equal(got, content) {
 		t.Fatal("blind resumed file content mismatch")
+	}
+}
+
+// TestDownloadDefaultStallGuard 未传任何选项时也应默认开启卡死防护
+func TestDownloadDefaultStallGuard(t *testing.T) {
+	old := defaultIdleTimeout
+	defaultIdleTimeout = 150 * time.Millisecond
+	defer func() { defaultIdleTimeout = old }()
+
+	chunk := bytes.Repeat([]byte("a"), 64*1024)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(chunk)
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+		time.Sleep(1 * time.Second) // 停流
+	}))
+	defer srv.Close()
+
+	path := filepath.Join(t.TempDir(), "stall.bin")
+	if _, err := Download(srv.URL, path); err == nil {
+		t.Fatal("expected default stall timeout error")
 	}
 }

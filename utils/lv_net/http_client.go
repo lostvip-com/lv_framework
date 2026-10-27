@@ -73,8 +73,8 @@ func WithTimeout(d time.Duration) RequestOption {
 	return func(o *requestOptions) { o.timeout = d }
 }
 
-// WithIdleTimeout 设置空闲超时：每收到一批数据就重置计时，超过 d 无数据才中止。
-// 适合大文件下载等总时长不可控、但不应卡死的场景（配合 Download 使用）
+// WithIdleTimeout 自定义下载空闲超时：每收到一批数据就重置计时，超过 d 无数据才中止。
+// Download 默认已开启 60s 卡死防护，传负数可禁用
 func WithIdleTimeout(d time.Duration) RequestOption {
 	return func(o *requestOptions) { o.idleTimeout = d }
 }
@@ -117,17 +117,52 @@ func GetBytes(rawURL string, opts ...RequestOption) ([]byte, error) {
 	return doRequest(http.MethodGet, rawURL, nil, "", newRequestOptions(opts))
 }
 
-// PostJSON 发送 POST 请求，body 自动序列化为 JSON
+// PostJSON 发送 POST 请求，body 自动序列化为 JSON，返回原始响应
 func PostJSON(rawURL string, body any, opts ...RequestOption) ([]byte, error) {
-	var reader io.Reader
-	if body != nil {
-		data, err := json.Marshal(body)
-		if err != nil {
-			return nil, fmt.Errorf("json marshal: %w", err)
-		}
-		reader = bytes.NewReader(data)
+	reader, err := marshalBody(body)
+	if err != nil {
+		return nil, err
 	}
 	return doRequest(http.MethodPost, rawURL, reader, "application/json", newRequestOptions(opts))
+}
+
+// GetJSON 发送 GET 请求并把 JSON 响应解析到 result（result 传 nil 则只校验状态码）
+func GetJSON(rawURL string, result any, opts ...RequestOption) error {
+	return doJSON(http.MethodGet, rawURL, nil, result, newRequestOptions(opts))
+}
+
+// SendJSON 发送 POST 请求：body 自动序列化为 JSON，响应解析到 result（result 传 nil 则忽略响应体）
+func SendJSON(rawURL string, body, result any, opts ...RequestOption) error {
+	return doJSON(http.MethodPost, rawURL, body, result, newRequestOptions(opts))
+}
+
+func doJSON(method, rawURL string, body, result any, o *requestOptions) error {
+	reader, err := marshalBody(body)
+	if err != nil {
+		return err
+	}
+	data, err := doRequest(method, rawURL, reader, "application/json", o)
+	if err != nil {
+		return err
+	}
+	if result == nil {
+		return nil
+	}
+	if err = json.Unmarshal(data, result); err != nil {
+		return fmt.Errorf("json unmarshal: %w", err)
+	}
+	return nil
+}
+
+func marshalBody(body any) (io.Reader, error) {
+	if body == nil {
+		return nil, nil
+	}
+	data, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("json marshal: %w", err)
+	}
+	return bytes.NewReader(data), nil
 }
 
 // PostForm 发送表单 POST 请求，返回响应文本
@@ -140,10 +175,13 @@ func PostForm(rawURL string, data url.Values, opts ...RequestOption) (string, er
 // errRestartDownload 内部哨兵：本地半成品无效（如 416 且大小不符），需不带 Range 全量重下
 var errRestartDownload = errors.New("restart download")
 
+// defaultIdleTimeout 下载默认卡死防护：数据持续流入则不限总时长，停流超过该时长才中止
+var defaultIdleTimeout = 60 * time.Second
+
 // Download 流式下载文件到本地，适合大文件：
-//   - 默认无端到端超时，仅靠传输层阶段超时兜底（拨号/TLS/响应头）
+//   - 默认无端到端超时（不怕大文件慢），默认 60s 卡死防护（停流即中止）
 //   - io.Copy 流式写盘，内存占用恒定
-//   - WithTimeout(d)：限制总时长预算；WithIdleTimeout(d)：超过 d 无数据流入则中止（推荐）
+//   - WithTimeout(d)：限制总时长预算；WithIdleTimeout(d)：自定义/禁用（负数）卡死检测
 //   - WithResume()：断点续传（Range + If-Range 校验），中断时保留半成品与 "<path>.lvdl" 元数据
 //   - WithProgress(fn)：下载进度回调
 //   - 未启用续传时失败自动删除半成品
@@ -174,7 +212,11 @@ func downloadOnce(client *http.Client, o *requestOptions, rawURL, filePath strin
 	}
 	// 卡死检测需要可取消的 context，必须在构建请求前创建，cancel 才能中断 body 读取
 	var stallCancel context.CancelFunc
-	if o.idleTimeout > 0 {
+	idle := o.idleTimeout
+	if idle == 0 {
+		idle = defaultIdleTimeout // 未指定时默认开启卡死防护，负数表示禁用
+	}
+	if idle > 0 {
 		ctx, stallCancel = context.WithCancel(ctx)
 		defer stallCancel()
 	}
@@ -250,7 +292,7 @@ func downloadOnce(client *http.Client, o *requestOptions, rawURL, filePath strin
 	var body io.Reader = res.Body
 	stopStall := func() {}
 	if stallCancel != nil {
-		sr := newStallReader(res.Body, o.idleTimeout, stallCancel)
+		sr := newStallReader(res.Body, idle, stallCancel)
 		body = sr
 		stopStall = sr.stop
 	}
