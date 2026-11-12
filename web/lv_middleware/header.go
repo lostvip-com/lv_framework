@@ -34,20 +34,29 @@ func NoCache(c *gin.Context) {
 	c.Next()
 }
 
-// Options is a lv_middleware function that appends headers
-// for options requests and aborts then exits the lv_middleware
-// chain and ends the request.
+// Options 全局跨域中间件：对每个响应都附加跨域响应头；
+// 预检(OPTIONS)请求直接返回，不进入后续业务处理链。
 func Options(c *gin.Context) {
-	if c.Request.Method != "OPTIONS" {
-		c.Next()
-	} else {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "authorization, origin, content-type, accept")
+	c.Header("Access-Control-Allow-Origin", "*")
+	c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+
+	// 按客户端实际请求的头部回显，自定义头也能通过预检；未携带时退回默认清单
+	allowHeaders := c.Request.Header.Get("Access-Control-Request-Headers")
+	if allowHeaders == "" {
+		allowHeaders = "authorization, origin, content-type, accept, x-requested-with"
+	}
+	c.Header("Access-Control-Allow-Headers", allowHeaders)
+
+	c.Header("Access-Control-Expose-Headers", "Content-Length, Content-Type")
+	c.Header("Access-Control-Max-Age", "86400")
+
+	if c.Request.Method == "OPTIONS" {
 		c.Header("Allow", "HEAD,GET,POST,PUT,PATCH,DELETE,OPTIONS")
 		c.Header("Content-Type", "application/json")
 		c.AbortWithStatus(200)
+		return
 	}
+	c.Next()
 }
 
 // Secure is a lv_middleware function that appends security
