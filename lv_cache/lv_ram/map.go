@@ -281,18 +281,39 @@ func (rcc *RamCacheClient) invalidFieldValue(field, value string) error {
 // HMSet 批量设置 hash field 并对整个 hash key 设置过期。
 // 修复：原实现对不存在的顶层 key "pk:k" 调 Expire 导致 duration 失效（会话永不过期）。
 // 现改为 HSet 完成后对 pk 本身调一次 Expire(pk, duration)。
+//func (rcc *RamCacheClient) HMSet(pk string, m map[string]any, duration time.Duration) error {
+//	for k, v := range m {
+//		if err := rcc.HSet(pk, k, v); err != nil {
+//			return err
+//		}
+//	}
+//	if duration > 0 {
+//		if err := rcc.Expire(pk, duration); err != nil {
+//			return err
+//		}
+//	}
+//	return nil
+//}
+
 func (rcc *RamCacheClient) HMSet(pk string, m map[string]any, duration time.Duration) error {
+	if len(m) == 0 {
+		return nil
+	}
+	var errs []error
+	written := 0
 	for k, v := range m {
 		if err := rcc.HSet(pk, k, v); err != nil {
-			return err
+			errs = append(errs, fmt.Errorf("hset %s.%s: %w", pk, k, err))
+			continue
 		}
+		written++
 	}
-	if duration > 0 {
+	if written > 0 && duration > 0 { // 只有真写入了字段才设 TTL
 		if err := rcc.Expire(pk, duration); err != nil {
-			return err
+			errs = append(errs, fmt.Errorf("expire %s: %w", pk, err))
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 // 支持reids的key匹配规则
