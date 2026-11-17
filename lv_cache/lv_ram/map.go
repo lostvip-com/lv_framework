@@ -33,8 +33,6 @@ var defaultTime = 24 * 60 * time.Minute
 var (
 	Nil                   = errors.New("cache:nil")
 	KeyNull               = errors.New("key is null")
-	ValueNull             = errors.New("value is null")
-	FieldNull             = errors.New("field is null")
 	HashSetFieldTypeError = errors.New("hash set field's type is not string")
 	FieldValueNumberError = errors.New("hash set field and value number is fault")
 )
@@ -85,8 +83,8 @@ func (rcc *RamCacheClient) Set(key string, value interface{}, expiration time.Du
 	if err != nil {
 		return err
 	}
-	if err = rcc.invalidKeyValue(key, val); err != nil {
-		return err
+	if key == "" {
+		return KeyNull
 	}
 	rcc.c.Set(key, val, expiration)
 	return nil
@@ -112,8 +110,8 @@ func (rcc *RamCacheClient) Del(keys ...string) error {
 }
 
 func (rcc *RamCacheClient) getHashCache(key string) (*gocache.Cache, bool, error) {
-	if err := rcc.invalidKey(key); err != nil {
-		return nil, false, err
+	if key == "" {
+		return nil, false, KeyNull
 	}
 	data, exist := rcc.c.Get(key)
 	if !exist {
@@ -149,7 +147,6 @@ func (rcc *RamCacheClient) HSet(key string, values ...interface{}) error {
 			err = HashSetFieldTypeError
 			return err
 		}
-		// hash set的field和value数目不匹配
 		if i+1 >= len(values) {
 			err = FieldValueNumberError
 			return err
@@ -158,11 +155,7 @@ func (rcc *RamCacheClient) HSet(key string, values ...interface{}) error {
 		if err != nil {
 			return err
 		}
-		field = fmt.Sprintf("%v:%v", key, field)
-		if err = rcc.invalidFieldValue(field, val); err != nil {
-			return err
-		}
-		hashCache.Set(field, val, gocache.DefaultExpiration)
+		hashCache.Set(fmt.Sprintf("%v:%v", key, field), val, gocache.DefaultExpiration)
 	}
 	rcc.c.Set(key, hashCache, gocache.DefaultExpiration)
 	return nil
@@ -226,9 +219,6 @@ func (rcc *RamCacheClient) Close() error {
 	return nil
 }
 
-// ///////////////////////////////////////////////////////////////////////////////////////////////
-// marshalValue 统一把缓存值转成字符串存储。
-// nil 返回空串（与 go-redis 的 Set(key, nil) 行为一致），不视为错误。
 func marshalValue(value interface{}) (string, error) {
 	if value == nil {
 		return "", nil
@@ -244,56 +234,6 @@ func marshalValue(value interface{}) (string, error) {
 		return string(data), nil
 	}
 }
-
-func (rcc *RamCacheClient) invalidKey(key string) error {
-	if key == "" {
-		return KeyNull
-	}
-	return nil
-}
-
-func (rcc *RamCacheClient) invalidField(field string) error {
-	if field == "" {
-		return FieldNull
-	}
-	return nil
-}
-
-func (rcc *RamCacheClient) invalidValue(value string) error {
-	// 空字符串是合法缓存值（如空结果/负缓存），不应拒绝；nil 由 marshalValue 拦截
-	return nil
-}
-
-func (rcc *RamCacheClient) invalidKeyValue(key, value string) error {
-	if err := rcc.invalidKey(key); err != nil {
-		return err
-	}
-	return rcc.invalidValue(value)
-}
-
-func (rcc *RamCacheClient) invalidFieldValue(field, value string) error {
-	if err := rcc.invalidField(field); err != nil {
-		return err
-	}
-	return rcc.invalidValue(value)
-}
-
-// HMSet 批量设置 hash field 并对整个 hash key 设置过期。
-// 修复：原实现对不存在的顶层 key "pk:k" 调 Expire 导致 duration 失效（会话永不过期）。
-// 现改为 HSet 完成后对 pk 本身调一次 Expire(pk, duration)。
-//func (rcc *RamCacheClient) HMSet(pk string, m map[string]any, duration time.Duration) error {
-//	for k, v := range m {
-//		if err := rcc.HSet(pk, k, v); err != nil {
-//			return err
-//		}
-//	}
-//	if duration > 0 {
-//		if err := rcc.Expire(pk, duration); err != nil {
-//			return err
-//		}
-//	}
-//	return nil
-//}
 
 func (rcc *RamCacheClient) HMSet(pk string, m map[string]any, duration time.Duration) error {
 	if len(m) == 0 {
@@ -316,7 +256,7 @@ func (rcc *RamCacheClient) HMSet(pk string, m map[string]any, duration time.Dura
 	return errors.Join(errs...)
 }
 
-// 支持reids的key匹配规则
+// CountKeysByPattern 支持reids的key匹配规则
 func (rcc *RamCacheClient) CountKeysByPattern(pattern string) (int64, error) {
 	if pattern == "" {
 		return 0, KeyNull

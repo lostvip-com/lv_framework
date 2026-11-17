@@ -96,6 +96,17 @@ func TestSetNilAndEmptyValue(t *testing.T) {
 	if v, err := c.HGet("e3", "f"); err != nil || v != "" {
 		t.Fatalf("HGet empty value want \"\", got %q err %v", v, err)
 	}
+	// 空 field 也是合法 hash 字段名（与 Redis HSET key "" value 一致）
+	if err := c.HSet("e4", "", "v"); err != nil {
+		t.Fatalf("HSet empty field failed: %v", err)
+	}
+	if v, err := c.HGet("e4", ""); err != nil || v != "v" {
+		t.Fatalf("HGet empty field want v, got %q err %v", v, err)
+	}
+	all, err := c.HGetAll("e4")
+	if err != nil || len(all) != 1 || all[""] != "v" {
+		t.Fatalf("HGetAll empty field want map[\"\":v], got %v err %v", all, err)
+	}
 }
 
 // TestConcurrentSetGet 并发读写，go test -race 验证无 data race。
