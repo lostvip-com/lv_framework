@@ -227,9 +227,11 @@ func (rcc *RamCacheClient) Close() error {
 }
 
 // ///////////////////////////////////////////////////////////////////////////////////////////////
+// marshalValue 统一把缓存值转成字符串存储。
+// nil 返回空串（与 go-redis 的 Set(key, nil) 行为一致），不视为错误。
 func marshalValue(value interface{}) (string, error) {
 	if value == nil {
-		return "", ValueNull
+		return "", nil
 	}
 	switch value.(type) {
 	case string:
@@ -258,9 +260,7 @@ func (rcc *RamCacheClient) invalidField(field string) error {
 }
 
 func (rcc *RamCacheClient) invalidValue(value string) error {
-	if value == "" {
-		return ValueNull
-	}
+	// 空字符串是合法缓存值（如空结果/负缓存），不应拒绝；nil 由 marshalValue 拦截
 	return nil
 }
 

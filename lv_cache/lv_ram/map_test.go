@@ -74,6 +74,30 @@ func TestGetOnHashKeyReturnsError(t *testing.T) {
 	}
 }
 
+// TestSetNilAndEmptyValue 验证空字符串与 nil 均为合法缓存值（存为空串），不报错。
+// 空字符串常用作负缓存；nil 行为与 go-redis 的 Set(key, nil) 一致。
+func TestSetNilAndEmptyValue(t *testing.T) {
+	c := NewRamCacheClient()
+	if err := c.Set("e1", "", cache.DefaultExpiration); err != nil {
+		t.Fatalf("Set empty string failed: %v", err)
+	}
+	if v, err := c.Get("e1"); err != nil || v != "" {
+		t.Fatalf("Get empty string want \"\", got %q err %v", v, err)
+	}
+	if err := c.Set("e2", nil, cache.DefaultExpiration); err != nil {
+		t.Fatalf("Set nil failed: %v", err)
+	}
+	if v, err := c.Get("e2"); err != nil || v != "" {
+		t.Fatalf("Get nil value want \"\", got %q err %v", v, err)
+	}
+	if err := c.HSet("e3", "f", ""); err != nil {
+		t.Fatalf("HSet empty value failed: %v", err)
+	}
+	if v, err := c.HGet("e3", "f"); err != nil || v != "" {
+		t.Fatalf("HGet empty value want \"\", got %q err %v", v, err)
+	}
+}
+
 // TestConcurrentSetGet 并发读写，go test -race 验证无 data race。
 func TestConcurrentSetGet(t *testing.T) {
 	c := NewRamCacheClient()
